@@ -171,8 +171,12 @@ class Transaction(Base, SoftDeleteMixin):
     Payee = Column(String(700), comment='دریافت‌کننده وجه')
     
     # Transaction Identification Fields
-    TransactionID = Column(String(100), comment='شناسه یکتای تراکنش')
-    TransactionDate = Column(DateTime, comment='تاریخ تراکنش')
+    # Note: Id (line 80) is the internal database primary key
+    # TransactionID is the business/external transaction identifier used in reports
+    TransactionID = Column(String(100), comment='شناسه یکتای تراکنش - شناسه کسب‌وکار')
+    # Note: DocumentDate (line 83) is for document-based transactions
+    # TransactionDate is for general transaction timing used across different transaction types
+    TransactionDate = Column(DateTime, comment='تاریخ تراکنش - تاریخ عمومی برای انواع تراکنش')
     TransactionType = Column(String(100), comment='نوع تراکنش (Purchase, Sale, Payment, Receipt, etc.)')
     ReferenceNumber = Column(String(100), comment='شماره مرجع')
     
