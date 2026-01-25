@@ -73,3 +73,13 @@ desktop.ini
 output/
 results/
 exports/
+screenshots/
+uploads/*
+!uploads/.gitkeep
+*.xlsx
+*.xls
+
+# Playwright
+.playwright/
+test-results/
+playwright-report/
