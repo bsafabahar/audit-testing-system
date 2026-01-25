@@ -1,7 +1,7 @@
 """
 Simplified database models for testing with SQLite
 """
-from sqlalchemy import Column, Integer, String, DateTime, Float, Date
+from sqlalchemy import Column, Integer, String, DateTime, Float, Date, Numeric
 from database import Base
 
 
