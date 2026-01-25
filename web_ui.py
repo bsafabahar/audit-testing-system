@@ -201,6 +201,21 @@ def index():
     return render_template('index.html', audit_tests=AUDIT_TESTS)
 
 
+@app.route('/test-description/<test_id>')
+def get_test_description(test_id):
+    """دریافت توضیحات آزمون از فایل MD"""
+    try:
+        md_path = os.path.join('queries', f'{test_id}.md')
+        if os.path.exists(md_path):
+            with open(md_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return jsonify({'success': True, 'description': content})
+        else:
+            return jsonify({'success': False, 'error': 'فایل توضیحات یافت نشد'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """آپلود فایل اکسل و وارد کردن به دیتابیس"""
