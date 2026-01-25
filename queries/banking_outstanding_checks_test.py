@@ -6,7 +6,7 @@ Outstanding Checks Test
 چک‌های معلق طولانی‌مدت ممکن است نشانه مشکل باشند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import CheckPayables
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -42,34 +42,38 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     days_threshold = get_parameter('daysOutstanding', 60)
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول CheckPayables
+    query = session.query(CheckPayables)
     results = query.all()
     
     current_date = datetime.now()
     data = []
     
     for t in results:
-        if hasattr(t, 'CheckNumber') and hasattr(t, 'CheckStatus'):
-            if t.CheckNumber and t.CheckStatus in ['Issued', 'Outstanding', 'Pending']:
-                issue_date = t.TransactionDate if hasattr(t, 'TransactionDate') and t.TransactionDate else None
+        if t.CheckNumber and t.CheckDate:
+            # محاسبه روزهای گذشته از تاریخ چک
+            days_outstanding = (current_date - t.CheckDate).days
+            
+            # چک‌هایی که از سررسید گذشته اند
+            if days_outstanding >= days_threshold:
+                # تعیین وضعیت بر اساس روزهای معلق
+                if days_outstanding > 180:
+                    status = 'Overdue - Critical'
+                elif days_outstanding > 90:
+                    status = 'Overdue - High'
+                else:
+                    status = 'Outstanding'
                 
-                if issue_date:
-                    days_outstanding = (current_date - datetime.combine(issue_date, datetime.min.time())).days
-                    
-                    if days_outstanding >= days_threshold:
-                        amount = t.Debit if t.Debit else t.Credit if t.Credit else 0
-                        
-                        row = {
-                            'CheckNumber': str(t.CheckNumber),
-                            'IssueDate': issue_date.strftime('%Y-%m-%d'),
-                            'Amount': round(amount, 2),
-                            'Payee': t.Payee if hasattr(t, 'Payee') else '',
-                            'DaysOutstanding': days_outstanding,
-                            'Status': t.CheckStatus,
-                            'AccountNumber': t.AccountNumber if hasattr(t, 'AccountNumber') else ''
-                        }
-                        data.append(row)
+                row = {
+                    'CheckNumber': str(t.CheckNumber),
+                    'IssueDate': t.DocumentPaymentDate.strftime('%Y-%m-%d') if t.DocumentPaymentDate else '',
+                    'Amount': round(float(t.CheckAmount), 2),
+                    'Payee': t.PayeeName if t.PayeeName else '',
+                    'DaysOutstanding': days_outstanding,
+                    'Status': status,
+                    'AccountNumber': t.PayeeCode if t.PayeeCode else ''
+                }
+                data.append(row)
     
     # مرتب‌سازی بر اساس روزهای معلق
     data.sort(key=lambda x: x['DaysOutstanding'], reverse=True)

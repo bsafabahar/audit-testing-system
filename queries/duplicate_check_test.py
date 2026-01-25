@@ -5,7 +5,7 @@ Duplicate Check Detection
 شناسایی شماره چک‌های تکراری.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import CheckPayables, CheckReceivables
 from parameters import param_string, param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -41,53 +41,75 @@ def define() -> QueryDefinition:
 def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     """اجرای آزمون چک‌های تکراری"""
     
-    check_column = get_parameter('checkNumberColumn', 'DocumentNumber')
+    check_column = get_parameter('checkNumberColumn', 'CheckNumber')
     limit = get_parameter('limit', 100)
     
-    query = session.query(Transaction)
-    results = query.all()
+    # دریافت داده‌ها از هر دو جدول چک‌های پرداختی و دریافتی
+    payables = session.query(CheckPayables).all()
+    receivables = session.query(CheckReceivables).all()
     
     # گروه‌بندی بر اساس شماره چک
-    check_groups = defaultdict(list)
+    check_groups = defaultdict(lambda: {'items': [], 'type': set()})
     
-    for t in results:
-        check_num = str(t.DocumentNumber) if t.DocumentNumber else None
+    for t in payables:
+        check_num = str(t.CheckNumber) if t.CheckNumber else None
         if check_num:
-            check_groups[check_num].append(t)
+            check_groups[check_num]['items'].append({
+                'date': t.CheckDate,
+                'amount': t.CheckAmount,
+                'type': 'Payable',
+                'party': t.PayeeName
+            })
+            check_groups[check_num]['type'].add('Payable')
+    
+    for t in receivables:
+        check_num = str(t.CheckNumber) if t.CheckNumber else None
+        if check_num:
+            check_groups[check_num]['items'].append({
+                'date': t.CheckDate,
+                'amount': t.CheckAmount,
+                'type': 'Receivable',
+                'party': t.DrawerName
+            })
+            check_groups[check_num]['type'].add('Receivable')
     
     # تحلیل چک‌های تکراری
     data = []
     
-    for check_num, transactions in check_groups.items():
-        if len(transactions) > 1:  # فقط موارد تکراری
-            dates = [t.DocumentDate for t in transactions if t.DocumentDate]
-            debits = [t.Debit for t in transactions if t.Debit]
-            credits = [t.Credit for t in transactions if t.Credit]
+    def calculate_risk_level(check_types, amounts, dates):
+        """محاسبه سطح ریسک چک تکراری"""
+        # اگر هر دو نوع چک (پرداختی و دریافتی) با یک شماره وجود داشته باشد، ریسک بالاست
+        if len(check_types) > 1:
+            return 'بسیار بالا - دو نوع چک'
+        elif len(amounts) == 1 and len(dates) > 0:
+            date_diff = (max(dates) - min(dates)).days if len(dates) > 1 else 0
+            if date_diff < 7:
+                return 'بالا - تاریخ نزدیک'
+            else:
+                return 'متوسط'
+        else:
+            return 'پایین'
+    
+    for check_num, group_data in check_groups.items():
+        items = group_data['items']
+        if len(items) > 1:  # فقط موارد تکراری
+            dates = [item['date'] for item in items if item['date']]
+            amounts = set(float(item['amount']) for item in items if item['amount'])
             
-            amounts = set()
-            for t in transactions:
-                if t.Debit:
-                    amounts.add(t.Debit)
-                if t.Credit:
-                    amounts.add(t.Credit)
+            # محاسبه مجموع مبالغ بر اساس نوع
+            total_payable = sum(float(item['amount']) for item in items if item['type'] == 'Payable' and item['amount'])
+            total_receivable = sum(float(item['amount']) for item in items if item['type'] == 'Receivable' and item['amount'])
             
             # تعیین سطح ریسک
-            if len(amounts) == 1 and len(dates) > 0:
-                date_diff = (max(dates) - min(dates)).days if len(dates) > 1 else 0
-                if date_diff < 7:
-                    risk_level = 'بالا'
-                else:
-                    risk_level = 'متوسط'
-            else:
-                risk_level = 'پایین'
+            risk_level = calculate_risk_level(group_data['type'], amounts, dates)
             
             row = {
                 'CheckNumber': check_num,
-                'OccurrenceCount': len(transactions),
+                'OccurrenceCount': len(items),
                 'FirstDate': min(dates).strftime('%Y-%m-%d') if dates else '',
                 'LastDate': max(dates).strftime('%Y-%m-%d') if dates else '',
-                'TotalDebit': round(sum(debits), 2) if debits else 0.0,
-                'TotalCredit': round(sum(credits), 2) if credits else 0.0,
+                'TotalDebit': round(total_payable, 2),
+                'TotalCredit': round(total_receivable, 2),
                 'UniqueAmounts': len(amounts),
                 'RiskLevel': risk_level
             }

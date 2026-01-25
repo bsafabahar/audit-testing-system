@@ -6,7 +6,7 @@ Ghost Employees Test
 این الگو ممکن است نشانه کارکنان ارواح (ghost employees) باشد.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import PayrollTransactions
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -44,8 +44,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     max_days = get_parameter('maxEmploymentDays', 90)
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول PayrollTransactions
+    query = session.query(PayrollTransactions)
     results = query.all()
     
     # گروه‌بندی بر اساس کارمند
@@ -55,11 +55,10 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     })
     
     for t in results:
-        if hasattr(t, 'EmployeeID') and hasattr(t, 'PayrollAmount'):
-            if t.EmployeeID and t.PayrollAmount and t.PayrollAmount > 0:
-                if hasattr(t, 'TransactionDate') and t.TransactionDate:
-                    employee_payments[t.EmployeeID]['dates'].append(t.TransactionDate)
-                    employee_payments[t.EmployeeID]['amounts'].append(t.PayrollAmount)
+        if t.EmployeeCode and t.NetPayment and t.NetPayment > 0:
+            if t.VoucherDate:
+                employee_payments[t.EmployeeCode]['dates'].append(t.VoucherDate)
+                employee_payments[t.EmployeeCode]['amounts'].append(float(t.NetPayment))
     
     # تحلیل کارکنان
     data = []

@@ -6,7 +6,7 @@ One Dollar Items Test
 این اقلام ممکن است برای مخفی کردن کمبود موجودی استفاده شده باشند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import InventoryIssues
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -43,7 +43,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     min_quantity = get_parameter('minQuantity', 1)
     
     # دریافت داده‌ها
-    query = session.query(Transaction)
+    query = session.query(InventoryIssues)
     results = query.all()
     
     # گروه‌بندی بر اساس قلم
@@ -56,29 +56,29 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     })
     
     for t in results:
-        if hasattr(t, 'ItemID') and hasattr(t, 'UnitPrice'):
-            if t.ItemID and t.UnitPrice is not None:
-                item_id = t.ItemID
-                
-                item_data[item_id]['current_price'] = t.UnitPrice
-                
-                if t.UnitPrice > 1:
-                    item_data[item_id]['prices'].append(t.UnitPrice)
-                
-                if hasattr(t, 'Quantity') and t.Quantity:
-                    item_data[item_id]['quantity'] += t.Quantity
-                
-                if hasattr(t, 'ItemDescription') and t.ItemDescription:
-                    item_data[item_id]['description'] = t.ItemDescription
-                
-                if hasattr(t, 'TransactionDate') and t.TransactionDate:
-                    if item_data[item_id]['last_date'] is None or \
-                       t.TransactionDate > item_data[item_id]['last_date']:
-                        item_data[item_id]['last_date'] = t.TransactionDate
+        if t.ItemCode and t.UnitPrice is not None:
+            item_code = t.ItemCode
+            unit_price = float(t.UnitPrice)
+            
+            item_data[item_code]['current_price'] = unit_price
+            
+            if unit_price > 1:
+                item_data[item_code]['prices'].append(unit_price)
+            
+            if t.Quantity:
+                item_data[item_code]['quantity'] += float(t.Quantity)
+            
+            if t.ItemName:
+                item_data[item_code]['description'] = t.ItemName
+            
+            if t.IssueDate:
+                if item_data[item_code]['last_date'] is None or \
+                   t.IssueDate > item_data[item_code]['last_date']:
+                    item_data[item_code]['last_date'] = t.IssueDate
     
     # یافتن اقلام یک‌ریالی
     data = []
-    for item_id, item_info in item_data.items():
+    for item_code, item_info in item_data.items():
         current_price = item_info['current_price']
         
         if current_price <= 1 and item_info['quantity'] >= min_quantity:
@@ -89,10 +89,10 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             total_value = current_price * item_info['quantity']
             
             row = {
-                'ItemID': str(item_id),
+                'ItemID': str(item_code),
                 'ItemDescription': item_info['description'],
                 'UnitPrice': round(current_price, 2),
-                'Quantity': item_info['quantity'],
+                'Quantity': int(item_info['quantity']),
                 'TotalValue': round(total_value, 2),
                 'LastTransactionDate': item_info['last_date'].strftime('%Y-%m-%d') if item_info['last_date'] else '',
                 'AveragePreviousPrice': round(avg_prev_price, 2)

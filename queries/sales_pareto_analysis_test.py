@@ -6,7 +6,7 @@ Pareto Analysis Test
 مشتریان یا اقلامی که بخش زیادی از فروش را تشکیل می‌دهند، شناسایی می‌شوند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import SalesTransactions
 from parameters import param_string
 from schema import col, schema
 from query_runner import get_parameter
@@ -42,8 +42,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     analysis_type = get_parameter('analysisType', 'Customer')
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول SalesTransactions
+    query = session.query(SalesTransactions)
     results = query.all()
     
     # گروه‌بندی بر اساس نوع تحلیل
@@ -52,17 +52,14 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     for t in results:
         entity_id = None
         
-        if analysis_type == 'Customer' and hasattr(t, 'CustomerID'):
-            entity_id = t.CustomerID
-        elif analysis_type == 'Item' and hasattr(t, 'ItemID'):
-            entity_id = t.ItemID
+        if analysis_type == 'Customer':
+            entity_id = t.CustomerCode
+        elif analysis_type == 'Item':
+            entity_id = t.ItemCode
         
         if entity_id:
-            amount = 0
-            if hasattr(t, 'SaleAmount') and t.SaleAmount:
-                amount = t.SaleAmount
-            elif t.Credit:
-                amount = t.Credit
+            # استفاده از Amount که در SalesTransactions موجود است
+            amount = float(t.Amount) if t.Amount else 0
             
             entity_sales[entity_id]['amount'] += amount
             entity_sales[entity_id]['count'] += 1

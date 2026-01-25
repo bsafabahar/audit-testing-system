@@ -6,7 +6,7 @@ Excessive Overtime Test
 کارمندانی که ساعات اضافی بیش از حد دارند، تشخیص داده می‌شوند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import PayrollTransactions
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -43,8 +43,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     max_overtime = get_parameter('maxOvertimeHours', 40.0)
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول PayrollTransactions
+    query = session.query(PayrollTransactions)
     results = query.all()
     
     # گروه‌بندی بر اساس کارمند و دوره
@@ -55,18 +55,18 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     }))
     
     for t in results:
-        if hasattr(t, 'EmployeeID'):
-            if t.EmployeeID:
-                period = t.TransactionDate.strftime('%Y-%m') if hasattr(t, 'TransactionDate') and t.TransactionDate else 'Unknown'
-                
-                if hasattr(t, 'RegularHours') and t.RegularHours:
-                    employee_hours[t.EmployeeID][period]['regular'] += t.RegularHours
-                
-                if hasattr(t, 'OvertimeHours') and t.OvertimeHours:
-                    employee_hours[t.EmployeeID][period]['overtime'] += t.OvertimeHours
-                
-                if hasattr(t, 'OvertimePay') and t.OvertimePay:
-                    employee_hours[t.EmployeeID][period]['overtime_pay'] += t.OvertimePay
+        if t.EmployeeCode:
+            period = t.Month if t.Month else (t.VoucherDate.strftime('%Y-%m') if t.VoucherDate else 'Unknown')
+            
+            # محاسبه ساعات عادی از روزهای کاری (فرض: 8 ساعت در روز)
+            if t.WorkedDays:
+                employee_hours[t.EmployeeCode][period]['regular'] += float(t.WorkedDays) * 8
+            
+            if t.OvertimeHours:
+                employee_hours[t.EmployeeCode][period]['overtime'] += float(t.OvertimeHours)
+            
+            if t.OvertimePay:
+                employee_hours[t.EmployeeCode][period]['overtime_pay'] += float(t.OvertimePay)
     
     # یافتن ساعات اضافی بالا
     data = []

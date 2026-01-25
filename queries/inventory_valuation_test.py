@@ -6,7 +6,7 @@ Inventory Valuation Test
 اختلافات بین روش‌های مختلف ارزش‌گذاری شناسایی می‌شوند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import InventoryIssues
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -44,26 +44,25 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     variance_threshold = get_parameter('varianceThreshold', 10.0)
     
     # دریافت داده‌ها
-    query = session.query(Transaction)
+    query = session.query(InventoryIssues)
     results = query.all()
     
     # گروه‌بندی بر اساس قلم
     item_transactions = defaultdict(list)
     
     for t in results:
-        if hasattr(t, 'ItemID') and hasattr(t, 'UnitPrice') and hasattr(t, 'Quantity'):
-            if t.ItemID and t.UnitPrice and t.Quantity:
-                if hasattr(t, 'TransactionDate') and t.TransactionDate:
-                    item_transactions[t.ItemID].append({
-                        'date': t.TransactionDate,
-                        'price': t.UnitPrice,
-                        'quantity': t.Quantity
-                    })
+        if t.ItemCode and t.UnitPrice and t.Quantity:
+            if t.IssueDate:
+                item_transactions[t.ItemCode].append({
+                    'date': t.IssueDate,
+                    'price': float(t.UnitPrice),
+                    'quantity': float(t.Quantity)
+                })
     
     # محاسبه ارزش به روش‌های مختلف
     data = []
     
-    for item_id, transactions in item_transactions.items():
+    for item_code, transactions in item_transactions.items():
         if len(transactions) < 2:
             continue
         
@@ -99,8 +98,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         
         if max_variance >= variance_threshold:
             row = {
-                'ItemID': str(item_id),
-                'Quantity': total_quantity,
+                'ItemID': str(item_code),
+                'Quantity': int(total_quantity),
                 'FIFOValue': round(fifo_value, 2),
                 'LIFOValue': round(lifo_value, 2),
                 'AverageCostValue': round(avg_cost_value, 2),

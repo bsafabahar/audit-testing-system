@@ -6,7 +6,7 @@ Duplicate Payroll Numbers Test
 حقوق‌های یکسان ممکن است نشانه خطا یا تقلب باشد.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import PayrollTransactions
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -41,8 +41,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     min_occurrences = get_parameter('minOccurrences', 3)
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول PayrollTransactions
+    query = session.query(PayrollTransactions)
     results = query.all()
     
     # گروه‌بندی بر اساس مبلغ حقوق
@@ -53,16 +53,15 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     })
     
     for t in results:
-        if hasattr(t, 'PayrollAmount') and hasattr(t, 'EmployeeID'):
-            if t.PayrollAmount and t.PayrollAmount > 0 and t.EmployeeID:
-                # گرد کردن به نزدیکترین 1000 تومان
-                rounded_amount = round(t.PayrollAmount / 1000) * 1000
-                
-                salary_data[rounded_amount]['employees'].add(str(t.EmployeeID))
-                salary_data[rounded_amount]['count'] += 1
-                
-                if hasattr(t, 'TransactionDate') and t.TransactionDate:
-                    salary_data[rounded_amount]['dates'].append(t.TransactionDate)
+        if t.NetPayment and t.NetPayment > 0 and t.EmployeeCode:
+            # گرد کردن به نزدیکترین 1000 تومان
+            rounded_amount = round(float(t.NetPayment) / 1000) * 1000
+            
+            salary_data[rounded_amount]['employees'].add(str(t.EmployeeCode))
+            salary_data[rounded_amount]['count'] += 1
+            
+            if t.VoucherDate:
+                salary_data[rounded_amount]['dates'].append(t.VoucherDate)
     
     # یافتن ارقام تکراری
     data = []
