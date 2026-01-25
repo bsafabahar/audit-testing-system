@@ -13,6 +13,7 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
+import random
 
 
 def define() -> QueryDefinition:
@@ -94,7 +95,6 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         
         # شبیه‌سازی مانده تایید شده (در عمل از پاسخ مشتری می‌آید)
         # اینجا فرض می‌کنیم 95% مشتریان موافق هستند و 5% اختلاف دارند
-        import random
         random.seed(hash(customer_code) % 1000)
         
         if random.random() < 0.95:  # 95% موافق

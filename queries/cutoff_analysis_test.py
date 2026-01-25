@@ -53,7 +53,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     # تبدیل تاریخ
     try:
         year_end = datetime.strptime(year_end_str, '%Y-%m-%d').date()
-    except:
+    except (ValueError, TypeError):
         return []
     
     # محاسبه بازه تاریخی

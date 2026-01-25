@@ -57,14 +57,14 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         try:
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
             query = query.filter(Transaction.DocumentDate >= start_date)
-        except:
+        except (ValueError, TypeError):
             pass
     
     if end_date_str:
         try:
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
             query = query.filter(Transaction.DocumentDate <= end_date)
-        except:
+        except (ValueError, TypeError):
             pass
     
     results = query.all()
