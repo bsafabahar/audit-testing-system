@@ -6,7 +6,7 @@ Abnormal Salary Test
 حقوق‌هایی که به طور غیرعادی بالا یا پایین هستند، تشخیص داده می‌شوند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import PayrollTransactions
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -43,18 +43,18 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     z_threshold = get_parameter('zScoreThreshold', 3.0)
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول PayrollTransactions
+    query = session.query(PayrollTransactions)
     results = query.all()
     
     # گروه‌بندی بر اساس کارمند و دوره
     employee_salaries = defaultdict(lambda: defaultdict(float))
     
     for t in results:
-        if hasattr(t, 'EmployeeID') and hasattr(t, 'PayrollAmount'):
-            if t.EmployeeID and t.PayrollAmount and t.PayrollAmount > 0:
-                period = t.TransactionDate.strftime('%Y-%m') if hasattr(t, 'TransactionDate') and t.TransactionDate else 'Unknown'
-                employee_salaries[t.EmployeeID][period] += t.PayrollAmount
+        if t.EmployeeCode and t.NetPayment and t.NetPayment > 0:
+            # استفاده از Month برای دوره یا VoucherDate
+            period = t.Month if t.Month else (t.VoucherDate.strftime('%Y-%m') if t.VoucherDate else 'Unknown')
+            employee_salaries[t.EmployeeCode][period] += float(t.NetPayment)
     
     # جمع‌آوری همه حقوق‌ها
     all_salaries = []
