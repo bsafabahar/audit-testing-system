@@ -6,7 +6,7 @@ Payroll Attendance Reconciliation Test
 عدم تطابق بین حقوق و حضور شناسایی می‌شود.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import PayrollTransactions
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -43,8 +43,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     variance_threshold = get_parameter('varianceThreshold', 10.0)
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
+    # دریافت داده‌ها از جدول PayrollTransactions
+    query = session.query(PayrollTransactions)
     results = query.all()
     
     # گروه‌بندی بر اساس کارمند و دوره
@@ -55,15 +55,15 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     }))
     
     for t in results:
-        if hasattr(t, 'EmployeeID') and hasattr(t, 'TransactionDate'):
-            if t.EmployeeID and t.TransactionDate:
-                period = t.TransactionDate.strftime('%Y-%m')
-                
-                if hasattr(t, 'PayrollAmount') and t.PayrollAmount:
-                    employee_data[t.EmployeeID][period]['payroll'] += t.PayrollAmount
-                
-                if hasattr(t, 'AttendanceHours') and t.AttendanceHours:
-                    employee_data[t.EmployeeID][period]['hours'] += t.AttendanceHours
+        if t.EmployeeCode and t.VoucherDate:
+            period = t.Month if t.Month else t.VoucherDate.strftime('%Y-%m')
+            
+            if t.NetPayment:
+                employee_data[t.EmployeeCode][period]['payroll'] += float(t.NetPayment)
+            
+            # محاسبه ساعات حضور از روزهای کاری (فرض: 8 ساعت در روز)
+            if t.WorkedDays:
+                employee_data[t.EmployeeCode][period]['hours'] += float(t.WorkedDays) * 8
     
     # تحلیل تطابق
     data = []
