@@ -57,7 +57,7 @@ def create_excel_with_headers(filename, columns_mapping):
             try:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            except:
+            except (TypeError, AttributeError):
                 pass
         adjusted_width = min(max_length + 2, 50)
         ws.column_dimensions[column].width = adjusted_width
@@ -247,9 +247,7 @@ def generate_transaction_sample_data():
     ]
     
     # لیست مشتریان
-    customers = [
-        ('C001', 'C002', 'C003', 'C004', 'C005')
-    ]
+    customers = ['C001', 'C002', 'C003', 'C004', 'C005']
     
     # لیست کارمندان
     employees = ['E001', 'E002', 'E003', 'E004', 'E005', 'E006', 'E007', 'E008']
