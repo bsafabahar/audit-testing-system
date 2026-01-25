@@ -76,6 +76,20 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     # تحلیل چک‌های تکراری
     data = []
     
+    def calculate_risk_level(check_types, amounts, dates):
+        """محاسبه سطح ریسک چک تکراری"""
+        # اگر هر دو نوع چک (پرداختی و دریافتی) با یک شماره وجود داشته باشد، ریسک بالاست
+        if len(check_types) > 1:
+            return 'بسیار بالا - دو نوع چک'
+        elif len(amounts) == 1 and len(dates) > 0:
+            date_diff = (max(dates) - min(dates)).days if len(dates) > 1 else 0
+            if date_diff < 7:
+                return 'بالا - تاریخ نزدیک'
+            else:
+                return 'متوسط'
+        else:
+            return 'پایین'
+    
     for check_num, group_data in check_groups.items():
         items = group_data['items']
         if len(items) > 1:  # فقط موارد تکراری
@@ -87,17 +101,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             total_receivable = sum(float(item['amount']) for item in items if item['type'] == 'Receivable' and item['amount'])
             
             # تعیین سطح ریسک
-            # اگر هر دو نوع چک (پرداختی و دریافتی) با یک شماره وجود داشته باشد، ریسک بالاست
-            if len(group_data['type']) > 1:
-                risk_level = 'بسیار بالا - دو نوع چک'
-            elif len(amounts) == 1 and len(dates) > 0:
-                date_diff = (max(dates) - min(dates)).days if len(dates) > 1 else 0
-                if date_diff < 7:
-                    risk_level = 'بالا - تاریخ نزدیک'
-                else:
-                    risk_level = 'متوسط'
-            else:
-                risk_level = 'پایین'
+            risk_level = calculate_risk_level(group_data['type'], amounts, dates)
             
             row = {
                 'CheckNumber': check_num,
