@@ -47,7 +47,8 @@ def define() -> QueryDefinition:
 BENFORD_FIRST = {str(i): math.log10(1 + 1/i) for i in range(1, 10)}
 
 # توزیع یکنواخت برای رقم دوم و سوم (0-9)
-UNIFORM_DIST = {str(i): 0.1 for i in range(0, 10)}
+UNIFORM_PROBABILITY = 1.0 / 10
+UNIFORM_DIST = {str(i): UNIFORM_PROBABILITY for i in range(0, 10)}
 
 
 def get_digit_at_position(value: float, position: int) -> str:
@@ -58,8 +59,8 @@ def get_digit_at_position(value: float, position: int) -> str:
     if value <= 0:
         return None
     
-    # حذف قسمت اعشار
-    abs_val = abs(int(value))
+    # حذف قسمت اعشار و گرفتن قدر مطلق
+    abs_val = int(abs(value))
     str_val = str(abs_val)
     
     if position >= len(str_val):

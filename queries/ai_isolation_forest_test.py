@@ -99,8 +99,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         hour_of_day = trans_date.hour if trans_date else 12
         day_of_week = trans_date.weekday() if trans_date else 0
         
-        # کد حساب به عدد (hash)
-        account_code_num = hash(t.AccountCode) % 10000 if t.AccountCode else 0
+        # کد حساب به عدد (استفاده از مجموع کدهای ASCII برای تعیین‌گرایی)
+        account_code_num = sum(ord(c) for c in (t.AccountCode or '')) % 10000
         
         features.append([
             float(amount),

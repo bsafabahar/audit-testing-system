@@ -13,6 +13,7 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from datetime import datetime
+from collections import Counter
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -103,8 +104,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         day_of_week = trans_date.weekday() if trans_date else 0
         day_of_month = trans_date.day if trans_date else 15
         
-        # کد حساب به عدد
-        account_code_num = hash(t.AccountCode) % 10000 if t.AccountCode else 0
+        # کد حساب به عدد (استفاده از مجموع کدهای ASCII برای تعیین‌گرایی)
+        account_code_num = sum(ord(c) for c in (t.AccountCode or '')) % 10000
         
         features.append([
             float(amount),
@@ -156,7 +157,6 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         distances.append(distance)
     
     # شمارش تعداد تراکنش در هر خوشه
-    from collections import Counter
     cluster_counts = Counter(cluster_labels)
     total_transactions = len(cluster_labels)
     

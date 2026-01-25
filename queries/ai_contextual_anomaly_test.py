@@ -94,12 +94,12 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         # استخراج مبالغ
         amounts = [t['amount'] for t in trans_list]
         
-        # محاسبه میانگین و انحراف معیار
-        mean_amount = statistics.mean(amounts)
-        
+        # نیاز به حداقل 2 مقدار برای محاسبه انحراف معیار
         if len(amounts) < 2:
             continue
         
+        # محاسبه میانگین و انحراف معیار
+        mean_amount = statistics.mean(amounts)
         stdev_amount = statistics.stdev(amounts)
         
         if stdev_amount == 0:
