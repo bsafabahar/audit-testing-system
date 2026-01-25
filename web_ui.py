@@ -24,8 +24,19 @@ import traceback
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from database import get_session, Base, engine
+from database import get_db, Base, db
 from models import Transaction
+from sqlalchemy.orm import sessionmaker
+
+# ایجاد session factory برای write operations
+def get_write_session():
+    """Get a writable session for data uploads"""
+    if not db._initialized:
+        db._initialize()
+    if db.SessionLocal is None:
+        raise Exception("Database not initialized")
+    return db.SessionLocal()
+
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
@@ -201,6 +212,21 @@ def index():
     return render_template('index.html', audit_tests=AUDIT_TESTS)
 
 
+@app.route('/test-description/<test_id>')
+def get_test_description(test_id):
+    """دریافت توضیحات آزمون از فایل MD"""
+    try:
+        md_path = os.path.join('queries', f'{test_id}.md')
+        if os.path.exists(md_path):
+            with open(md_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return jsonify({'success': True, 'description': content})
+        else:
+            return jsonify({'success': False, 'error': 'فایل توضیحات یافت نشد'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """آپلود فایل اکسل و وارد کردن به دیتابیس"""
@@ -238,7 +264,7 @@ def upload_file():
         df.rename(columns=column_mapping, inplace=True)
         
         # وارد کردن به دیتابیس
-        session = get_session()
+        session = get_write_session()
         
         try:
             # پاک کردن داده‌های قبلی (اختیاری)
@@ -288,7 +314,7 @@ def run_test(test_id):
         params = request.json or {}
         
         # اجرای آزمون
-        session = get_session()
+        session = get_db()
         
         try:
             results = test_module.execute(session)
@@ -321,7 +347,7 @@ def run_all_tests():
                 module_path = f'queries.{test["id"]}'
                 test_module = importlib.import_module(module_path)
                 
-                session = get_session()
+                session = get_db()
                 try:
                     test_results = test_module.execute(session)
                     results[test['id']] = {
@@ -353,7 +379,7 @@ def export_test(test_id):
         module_path = f'queries.{test_id}'
         test_module = importlib.import_module(module_path)
         
-        session = get_session()
+        session = get_db()
         
         try:
             results = test_module.execute(session)
@@ -378,7 +404,10 @@ def export_test(test_id):
 
 if __name__ == '__main__':
     # ایجاد جداول دیتابیس
-    Base.metadata.create_all(engine)
+    if not db._initialized:
+        db._initialize()
+    if db.engine:
+        Base.metadata.create_all(db.engine)
     
     # اجرای سرور
     app.run(debug=True, host='0.0.0.0', port=5000)
