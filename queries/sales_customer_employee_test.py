@@ -6,7 +6,7 @@ Customer-Employee Match Test
 فروش به کارکنان یا وابستگان ممکن است نشانه تقلب باشد.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import SalesTransactions, PayrollTransactions
 from schema import col, schema
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
@@ -36,47 +36,37 @@ def define() -> QueryDefinition:
 def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     """اجرای آزمون مطابقت مشتریان با کارکنان"""
     
-    # دریافت داده‌ها
-    query = session.query(Transaction)
-    results = query.all()
+    # دریافت شناسه‌های کارکنان از PayrollTransactions
+    payroll_query = session.query(PayrollTransactions.EmployeeCode).distinct()
+    employee_codes = {str(row.EmployeeCode) for row in payroll_query.all() if row.EmployeeCode}
     
-    # جمع‌آوری شناسه‌های کارکنان
-    employee_ids = set()
-    
-    for t in results:
-        if hasattr(t, 'EmployeeID') and t.EmployeeID:
-            employee_ids.add(str(t.EmployeeID))
+    # دریافت داده‌های فروش
+    sales_query = session.query(SalesTransactions)
+    sales_results = sales_query.all()
     
     # یافتن تطابق‌ها
     data = []
     
-    for t in results:
-        if hasattr(t, 'CustomerID') and hasattr(t, 'EmployeeID'):
-            customer_id = str(t.CustomerID) if t.CustomerID else ''
-            employee_id = str(t.EmployeeID) if t.EmployeeID else ''
+    for t in sales_results:
+        customer_code = str(t.CustomerCode) if t.CustomerCode else ''
+        
+        # بررسی تطابق مستقیم
+        if customer_code and customer_code in employee_codes:
+            match_type = 'مطابقت مستقیم'
             
-            # بررسی تطابق مستقیم
-            if customer_id and customer_id in employee_ids:
-                match_type = 'مطابقت مستقیم'
-                
-                amount = t.Debit if t.Debit else t.Credit if t.Credit else 0
-                discount = t.DiscountAmount if hasattr(t, 'DiscountAmount') and t.DiscountAmount else 0
-                discount_percent = 0
-                
-                if hasattr(t, 'OriginalAmount') and t.OriginalAmount and t.OriginalAmount > 0:
-                    discount_percent = (discount / t.OriginalAmount) * 100
-                
-                row = {
-                    'TransactionID': str(t.TransactionID) if hasattr(t, 'TransactionID') else '',
-                    'CustomerID': customer_id,
-                    'EmployeeID': employee_id,
-                    'Amount': round(amount, 2),
-                    'DiscountAmount': round(discount, 2),
-                    'DiscountPercent': round(discount_percent, 2),
-                    'TransactionDate': t.TransactionDate.strftime('%Y-%m-%d') if hasattr(t, 'TransactionDate') and t.TransactionDate else '',
-                    'MatchType': match_type
-                }
-                data.append(row)
+            amount = float(t.Amount) if t.Amount else 0
+            
+            row = {
+                'TransactionID': str(t.InvoiceNumber) if t.InvoiceNumber else '',
+                'CustomerID': customer_code,
+                'EmployeeID': customer_code,
+                'Amount': round(amount, 2),
+                'DiscountAmount': 0,  # Not available in SalesTransactions
+                'DiscountPercent': 0,  # Not available in SalesTransactions
+                'TransactionDate': t.InvoiceDate.strftime('%Y-%m-%d') if t.InvoiceDate else '',
+                'MatchType': match_type
+            }
+            data.append(row)
     
     # مرتب‌سازی بر اساس مبلغ
     data.sort(key=lambda x: x['Amount'], reverse=True)

@@ -6,7 +6,7 @@ Price Frequency Test
 نرخ‌هایی که با فراوانی غیرعادی ظاهر می‌شوند، شناسایی می‌شوند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import InventoryIssues
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -44,36 +44,36 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     min_frequency = get_parameter('minFrequency', 5)
     
     # دریافت داده‌ها
-    query = session.query(Transaction)
+    query = session.query(InventoryIssues)
     results = query.all()
     
     # گروه‌بندی بر اساس قلم و قیمت
     price_data = {}
     
     for t in results:
-        if hasattr(t, 'ItemID') and hasattr(t, 'UnitPrice'):
-            if t.ItemID and t.UnitPrice and t.UnitPrice > 0:
-                key = (t.ItemID, t.UnitPrice)
-                
-                if key not in price_data:
-                    price_data[key] = {
-                        'frequency': 0,
-                        'quantity': 0,
-                        'dates': []
-                    }
-                
-                price_data[key]['frequency'] += 1
-                
-                if hasattr(t, 'Quantity') and t.Quantity:
-                    price_data[key]['quantity'] += t.Quantity
-                
-                if hasattr(t, 'TransactionDate') and t.TransactionDate:
-                    price_data[key]['dates'].append(t.TransactionDate)
+        if t.ItemCode and t.UnitPrice and t.UnitPrice > 0:
+            unit_price = float(t.UnitPrice)
+            key = (t.ItemCode, unit_price)
+            
+            if key not in price_data:
+                price_data[key] = {
+                    'frequency': 0,
+                    'quantity': 0,
+                    'dates': []
+                }
+            
+            price_data[key]['frequency'] += 1
+            
+            if t.Quantity:
+                price_data[key]['quantity'] += float(t.Quantity)
+            
+            if t.IssueDate:
+                price_data[key]['dates'].append(t.IssueDate)
     
     # یافتن قیمت‌های با فراوانی بالا
     data = []
     
-    for (item_id, price), info in price_data.items():
+    for (item_code, price), info in price_data.items():
         if info['frequency'] >= min_frequency:
             dates = sorted(info['dates']) if info['dates'] else []
             first_date = dates[0] if dates else None
@@ -86,10 +86,10 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             total_value = price * info['quantity']
             
             row = {
-                'ItemID': str(item_id),
+                'ItemID': str(item_code),
                 'UnitPrice': round(price, 2),
                 'Frequency': info['frequency'],
-                'TotalQuantity': info['quantity'],
+                'TotalQuantity': int(info['quantity']),
                 'TotalValue': round(total_value, 2),
                 'FirstDate': first_date.strftime('%Y-%m-%d') if first_date else '',
                 'LastDate': last_date.strftime('%Y-%m-%d') if last_date else '',

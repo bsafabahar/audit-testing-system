@@ -6,7 +6,7 @@ Slow Moving Inventory Test
 اقلامی که برای مدت طولانی حرکتی نداشته‌اند، شناسایی می‌شوند.
 """
 from typing import List, Dict, Any
-from models import Transaction
+from models import InventoryIssues
 from parameters import param_number
 from schema import col, schema
 from query_runner import get_parameter
@@ -45,7 +45,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     days_threshold = get_parameter('daysSinceLastMove', 90)
     
     # دریافت داده‌ها
-    query = session.query(Transaction)
+    query = session.query(InventoryIssues)
     results = query.all()
     
     # گروه‌بندی بر اساس قلم
@@ -58,31 +58,30 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     })
     
     for t in results:
-        if hasattr(t, 'ItemID'):
-            if t.ItemID:
-                item_id = t.ItemID
-                
-                if hasattr(t, 'Quantity') and t.Quantity:
-                    item_movements[item_id]['quantity'] += t.Quantity
-                
-                if hasattr(t, 'UnitPrice') and t.UnitPrice:
-                    item_movements[item_id]['price'] = t.UnitPrice
-                
-                if hasattr(t, 'ItemDescription') and t.ItemDescription:
-                    item_movements[item_id]['description'] = t.ItemDescription
-                
-                if hasattr(t, 'TransactionDate') and t.TransactionDate:
-                    if item_movements[item_id]['last_date'] is None or \
-                       t.TransactionDate > item_movements[item_id]['last_date']:
-                        item_movements[item_id]['last_date'] = t.TransactionDate
-                        if hasattr(t, 'TransactionType'):
-                            item_movements[item_id]['last_type'] = t.TransactionType or ''
+        if t.ItemCode:
+            item_code = t.ItemCode
+            
+            if t.Quantity:
+                item_movements[item_code]['quantity'] += float(t.Quantity)
+            
+            if t.UnitPrice:
+                item_movements[item_code]['price'] = float(t.UnitPrice)
+            
+            if t.ItemName:
+                item_movements[item_code]['description'] = t.ItemName
+            
+            if t.IssueDate:
+                if item_movements[item_code]['last_date'] is None or \
+                   t.IssueDate > item_movements[item_code]['last_date']:
+                    item_movements[item_code]['last_date'] = t.IssueDate
+                    # InventoryIssues doesn't have TransactionType, it's all issues
+                    item_movements[item_code]['last_type'] = 'Issue'
     
     # یافتن اقلام راکد
     data = []
     current_date = datetime.now()
     
-    for item_id, movement in item_movements.items():
+    for item_code, movement in item_movements.items():
         if movement['last_date'] and movement['quantity'] > 0:
             days_since = (current_date - datetime.combine(movement['last_date'], datetime.min.time())).days
             
@@ -90,9 +89,9 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
                 total_value = movement['quantity'] * movement['price']
                 
                 row = {
-                    'ItemID': str(item_id),
+                    'ItemID': str(item_code),
                     'ItemDescription': movement['description'],
-                    'CurrentQuantity': movement['quantity'],
+                    'CurrentQuantity': int(movement['quantity']),
                     'UnitPrice': round(movement['price'], 2),
                     'TotalValue': round(total_value, 2),
                     'LastMovementDate': movement['last_date'].strftime('%Y-%m-%d'),
