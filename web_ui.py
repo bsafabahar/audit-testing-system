@@ -27,6 +27,7 @@ sys.path.insert(0, str(project_root))
 from database import get_db, Base, db
 from models import Transaction
 from sqlalchemy.orm import sessionmaker
+from test_data_requirements import get_test_requirements, get_all_required_files
 
 # ایجاد session factory برای write operations
 def get_write_session():
@@ -54,7 +55,6 @@ AUDIT_TESTS = {
             {'id': 'benford_first_two_digits_test', 'name': 'آزمون دو رقم اول بنفورد', 'icon': '🔢'},
             {'id': 'benford_last_two_digits_test', 'name': 'آزمون رقم آخر بنفورد', 'icon': '🔚'},
             {'id': 'benford_difference_test', 'name': 'آزمون تفاضل بنفورد', 'icon': '➖'},
-            {'id': 'benford_comparative_analysis', 'name': 'آزمون مقایسه دوره‌های زمانی', 'icon': '📊'},
         ]
     },
     'threshold': {
@@ -202,6 +202,35 @@ AUDIT_TESTS = {
         'tests': [
             {'id': 'compliance_segregation_duties_test', 'name': 'تفکیک وظایف', 'icon': '👥'},
         ]
+    },
+    'accounting': {
+        'name': 'آزمون‌های حسابداری',
+        'tests': [
+            {'id': 'accounting_footing_test', 'name': 'آزمون مجموع', 'icon': '➕'},
+            {'id': 'cutoff_analysis_test', 'name': 'تحلیل برش', 'icon': '✂️'},
+        ]
+    },
+    'ai': {
+        'name': 'آزمون‌های هوش مصنوعی',
+        'tests': [
+            {'id': 'ai_benford_advanced_test', 'name': 'بنفورد پیشرفته', 'icon': '🤖'},
+            {'id': 'ai_contextual_anomaly_test', 'name': 'ناهنجاری متنی', 'icon': '🔍'},
+            {'id': 'ai_isolation_forest_test', 'name': 'جنگل ایزوله', 'icon': '🌲'},
+            {'id': 'ai_kmeans_clustering_test', 'name': 'خوشه‌بندی K-Means', 'icon': '🎯'},
+        ]
+    },
+    'ar': {
+        'name': 'آزمون‌های حسابهای دریافتنی',
+        'tests': [
+            {'id': 'ar_confirmation_analysis_test', 'name': 'تحلیل تایید مشتریان', 'icon': '✉️'},
+        ]
+    },
+    'sampling': {
+        'name': 'آزمون‌های نمونه‌گیری',
+        'tests': [
+            {'id': 'sampling_monetary_unit_test', 'name': 'نمونه‌گیری واحد پولی', 'icon': '💵'},
+            {'id': 'sampling_stratified_test', 'name': 'نمونه‌گیری طبقه‌بندی شده', 'icon': '📊'},
+        ]
     }
 }
 
@@ -210,6 +239,27 @@ AUDIT_TESTS = {
 def index():
     """صفحه اصلی"""
     return render_template('index.html', audit_tests=AUDIT_TESTS)
+
+
+@app.route('/test-requirements/<test_id>')
+def get_test_requirements_api(test_id):
+    """دریافت نیازمندی‌های داده یک آزمون"""
+    try:
+        requirements = get_test_requirements(test_id)
+        return jsonify({'success': True, 'requirements': requirements})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/tests-requirements', methods=['POST'])
+def get_tests_requirements():
+    """دریافت نیازمندی‌های داده برای چند آزمون"""
+    try:
+        test_ids = request.json.get('test_ids', [])
+        all_files = get_all_required_files(test_ids)
+        return jsonify({'success': True, 'files': all_files})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 @app.route('/test-description/<test_id>')
@@ -310,8 +360,11 @@ def run_test(test_id):
         module_path = f'queries.{test_id}'
         test_module = importlib.import_module(module_path)
         
-        # دریافت پارامترها از request
-        params = request.json or {}
+        # دریافت پارامترها از request (اختیاری)
+        try:
+            params = request.get_json(silent=True) or {}
+        except:
+            params = {}
         
         # اجرای آزمون
         session = get_db()
