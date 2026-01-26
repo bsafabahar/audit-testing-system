@@ -311,6 +311,52 @@
             background: rgba(255,255,255,0.2);
         }
 
+        /* View Toggle Buttons */
+        .view-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .view-btn {
+            padding: 12px 30px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-btn:hover {
+            background: #f0f0ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
         /* Upload Section */
         .upload-section {
             background: white;
@@ -744,27 +790,68 @@
                     <span>برای مشاهده آزمون‌های هر دسته، روی عنوان دسته کلیک کنید.</span>
                 </div>
 
-                <div class="test-categories">
-                    {% for category_id, category in audit_tests.items() %}
-                    <div class="test-category">
-                        <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
-                            <span class="category-title">{{ category.name }}</span>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span class="category-count">{{ category.tests|length }}</span>
-                                <span class="expand-icon">▼</span>
+                <!-- View Toggle -->
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="switchView('category')" id="viewBtnCategory">
+                        <span>📂</span>
+                        <span>دسته‌بندی موضوعی</span>
+                    </button>
+                    <button class="view-btn" onclick="switchView('subsystem')" id="viewBtnSubsystem">
+                        <span>🏦</span>
+                        <span>دسته‌بندی زیرسیستم‌ها</span>
+                    </button>
+                </div>
+
+                <!-- Category View -->
+                <div class="view-content active" id="categoryView">
+                    <div class="test-categories">
+                        {% for category_id, category in audit_tests.items() %}
+                        <div class="test-category">
+                            <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
+                                <span class="category-title">{{ category.name }}</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="category-count">{{ category.tests|length }}</span>
+                                    <span class="expand-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="test-list" id="list-{{ category_id }}">
+                                {% for test in category.tests %}
+                                <div class="test-item" id="item-{{ test.id }}" onclick="toggleTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">
+                                    <input type="checkbox" class="test-checkbox" id="check-{{ test.id }}" onclick="event.stopPropagation()">
+                                    <span class="test-icon">{{ test.icon }}</span>
+                                    <span class="test-name">{{ test.name }}</span>
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
-                        <div class="test-list" id="list-{{ category_id }}">
-                            {% for test in category.tests %}
-                            <div class="test-item" id="item-{{ test.id }}" onclick="toggleTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">
-                                <input type="checkbox" class="test-checkbox" id="check-{{ test.id }}" onclick="event.stopPropagation()">
-                                <span class="test-icon">{{ test.icon }}</span>
-                                <span class="test-name">{{ test.name }}</span>
-                            </div>
-                            {% endfor %}
-                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                </div>
+
+                <!-- Subsystem View -->
+                <div class="view-content" id="subsystemView">
+                    <div class="test-categories">
+                        {% for subsystem_id, subsystem in subsystems.items() %}
+                        <div class="test-category">
+                            <div class="category-header" onclick="toggleCategory('sub-{{ subsystem_id }}')">
+                                <span class="category-title">{{ subsystem.icon }} {{ subsystem.name }}</span>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="category-count">{{ subsystem.tests|length }}</span>
+                                    <span class="expand-icon">▼</span>
+                                </div>
+                            </div>
+                            <div class="test-list" id="list-sub-{{ subsystem_id }}">
+                                {% for test in subsystem.tests %}
+                                <div class="test-item" id="item-sub-{{ subsystem_id }}-{{ test.id }}" onclick="toggleTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">
+                                    <input type="checkbox" class="test-checkbox" id="check-sub-{{ subsystem_id }}-{{ test.id }}" onclick="event.stopPropagation()">
+                                    <span class="test-icon">{{ test.icon }}</span>
+                                    <span class="test-name">{{ test.name }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
 
                 <div class="selected-summary" id="selectedSummary">
@@ -856,6 +943,46 @@
         let uploadedRecords = 0;
         let testResults = [];
 
+        function switchView(viewType) {
+            // Update button states
+            document.getElementById('viewBtnCategory').classList.remove('active');
+            document.getElementById('viewBtnSubsystem').classList.remove('active');
+            
+            if (viewType === 'category') {
+                document.getElementById('viewBtnCategory').classList.add('active');
+                document.getElementById('categoryView').classList.add('active');
+                document.getElementById('subsystemView').classList.remove('active');
+            } else {
+                document.getElementById('viewBtnSubsystem').classList.add('active');
+                document.getElementById('categoryView').classList.remove('active');
+                document.getElementById('subsystemView').classList.add('active');
+            }
+            
+            // Sync checkbox states
+            syncCheckboxes();
+        }
+
+        function syncCheckboxes() {
+            // Update all checkboxes based on selectedTests
+            selectedTests.forEach((test, testId) => {
+                // Update category view checkboxes
+                const catCheckbox = document.getElementById('check-' + testId);
+                const catItem = document.getElementById('item-' + testId);
+                if (catCheckbox) {
+                    catCheckbox.checked = true;
+                    if (catItem) catItem.classList.add('selected');
+                }
+                
+                // Update subsystem view checkboxes
+                document.querySelectorAll('[id^="check-sub-"][id$="-' + testId + '"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                    const itemId = checkbox.id.replace('check-', 'item-');
+                    const item = document.getElementById(itemId);
+                    if (item) item.classList.add('selected');
+                });
+            });
+        }
+
         function toggleCategory(categoryId) {
             const list = document.getElementById('list-' + categoryId);
             const category = list.parentElement;
@@ -864,20 +991,48 @@
         }
 
         function toggleTest(testId, testName, testIcon) {
-            const checkbox = document.getElementById('check-' + testId);
-            const item = document.getElementById('item-' + testId);
-            
-            checkbox.checked = !checkbox.checked;
-            
-            if (checkbox.checked) {
-                selectedTests.set(testId, { name: testName, icon: testIcon });
-                item.classList.add('selected');
-            } else {
+            // Toggle selection
+            if (selectedTests.has(testId)) {
                 selectedTests.delete(testId);
-                item.classList.remove('selected');
+            } else {
+                selectedTests.set(testId, { name: testName, icon: testIcon });
             }
             
+            // Update all checkboxes for this test across both views
+            updateTestCheckboxes(testId);
             updateSelectedSummary();
+        }
+        
+        function updateTestCheckboxes(testId) {
+            const isSelected = selectedTests.has(testId);
+            
+            // Update category view
+            const catCheckbox = document.getElementById('check-' + testId);
+            const catItem = document.getElementById('item-' + testId);
+            if (catCheckbox) {
+                catCheckbox.checked = isSelected;
+                if (catItem) {
+                    if (isSelected) {
+                        catItem.classList.add('selected');
+                    } else {
+                        catItem.classList.remove('selected');
+                    }
+                }
+            }
+            
+            // Update all subsystem view instances
+            document.querySelectorAll('[id^="check-sub-"][id$="-' + testId + '"]').forEach(checkbox => {
+                checkbox.checked = isSelected;
+                const itemId = checkbox.id.replace('check-', 'item-');
+                const item = document.getElementById(itemId);
+                if (item) {
+                    if (isSelected) {
+                        item.classList.add('selected');
+                    } else {
+                        item.classList.remove('selected');
+                    }
+                }
+            });
         }
 
         function updateSelectedSummary() {
@@ -910,11 +1065,8 @@
         }
 
         function removeTest(testId) {
-            const checkbox = document.getElementById('check-' + testId);
-            const item = document.getElementById('item-' + testId);
-            checkbox.checked = false;
-            item.classList.remove('selected');
             selectedTests.delete(testId);
+            updateTestCheckboxes(testId);
             updateSelectedSummary();
         }
 
