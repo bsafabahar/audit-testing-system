@@ -234,11 +234,299 @@ AUDIT_TESTS = {
     }
 }
 
+# نگاشت آزمون‌ها به زیرسیستم‌های حسابداری
+# هر آزمون می‌تواند در چندین زیرسیستم قابل اجرا باشد
+SUBSYSTEM_MAPPING = {
+    'cash_and_bank': {
+        'name': 'نقد و بانک',
+        'icon': '🏦',
+        'tests': [
+            # Benford - applicable to cash transactions
+            'benford_first_digit_test', 'benford_first_two_digits_test', 
+            'benford_last_two_digits_test', 'benford_difference_test',
+            # Threshold - applicable to cash amounts
+            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            # Duplicate - check for duplicate transactions
+            'duplicate_transaction_test', 'duplicate_check_test',
+            # Statistical - cash flow analysis
+            'statistical_zscore_test', 'statistical_iqr_test',
+            # Cyclical - cash flow patterns
+            'cyclical_cash_flow_test',
+            # Reconciliation - bank reconciliation
+            'reconciliation_bank_test',
+            # Zero tests - applicable to cash amounts
+            'zero_three_zeros_test', 'zero_round_amounts_test', 'zero_digit_frequency_test',
+            # Banking specific
+            'banking_outstanding_checks_test', 'banking_unmatched_transfers_test',
+            'banking_weekend_transactions_test', 'banking_transparency_test',
+            # Journal entries
+            'journal_manual_entries_test', 'journal_unsupported_entries_test',
+            'journal_period_end_entries_test', 'journal_unusual_combinations_test',
+            # Data quality
+            'data_quality_missing_data_test', 'data_quality_reasonableness_test', 'data_quality_data_type_test',
+            # Advanced
+            'advanced_sequential_audit_test', 'advanced_network_analysis_test',
+            # Fraud
+            'fraud_kiting_test', 'fraud_lapping_test',
+            # Anomaly
+            'anomaly_gap_analysis_test', 'anomaly_spike_detection_test',
+            # Trend
+            'trend_seasonal_variance_test',
+            # Accounting
+            'accounting_footing_test', 'cutoff_analysis_test',
+            # AI
+            'ai_benford_advanced_test', 'ai_contextual_anomaly_test',
+            'ai_isolation_forest_test', 'ai_kmeans_clustering_test',
+            # Sampling
+            'sampling_monetary_unit_test', 'sampling_stratified_test',
+        ]
+    },
+    'inventory': {
+        'name': 'انبار',
+        'icon': '📦',
+        'tests': [
+            # Benford - applicable to inventory values
+            'benford_first_digit_test', 'benford_first_two_digits_test',
+            'benford_last_two_digits_test', 'benford_difference_test',
+            # Threshold
+            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            # Duplicate
+            'duplicate_transaction_test', 'duplicate_names_test',
+            # Statistical - price volatility
+            'statistical_zscore_test', 'statistical_iqr_test',
+            'statistical_price_volatility_test',
+            # Cyclical - inventory patterns
+            'cyclical_inventory_test',
+            # Reconciliation - inventory consumption
+            'reconciliation_inventory_consumption_test',
+            # Zero tests
+            'zero_three_zeros_test', 'zero_round_amounts_test', 'zero_digit_frequency_test',
+            # Inventory specific
+            'inventory_one_dollar_items_test', 'inventory_slow_moving_test',
+            'inventory_valuation_test', 'inventory_price_frequency_test',
+            # Journal
+            'journal_manual_entries_test', 'journal_unsupported_entries_test',
+            'journal_period_end_entries_test', 'journal_unusual_combinations_test',
+            # Data quality
+            'data_quality_missing_data_test', 'data_quality_reasonableness_test', 'data_quality_data_type_test',
+            # Advanced
+            'advanced_sequential_audit_test', 'advanced_network_analysis_test', 'advanced_shell_company_test',
+            # Anomaly
+            'anomaly_gap_analysis_test', 'anomaly_spike_detection_test',
+            # Trend
+            'trend_seasonal_variance_test',
+            # Accounting
+            'accounting_footing_test', 'cutoff_analysis_test',
+            # AI
+            'ai_benford_advanced_test', 'ai_contextual_anomaly_test',
+            'ai_isolation_forest_test', 'ai_kmeans_clustering_test',
+            # Sampling
+            'sampling_monetary_unit_test', 'sampling_stratified_test',
+        ]
+    },
+    'payroll': {
+        'name': 'حقوق و دستمزد',
+        'icon': '👔',
+        'tests': [
+            # Benford - applicable to salary amounts
+            'benford_first_digit_test', 'benford_first_two_digits_test',
+            'benford_last_two_digits_test', 'benford_difference_test',
+            # Threshold
+            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            # Duplicate
+            'duplicate_transaction_test', 'duplicate_names_test',
+            # Statistical
+            'statistical_zscore_test', 'statistical_iqr_test',
+            # Reconciliation - payroll and attendance
+            'reconciliation_payroll_attendance_test',
+            # Zero tests
+            'zero_three_zeros_test', 'zero_round_amounts_test', 'zero_digit_frequency_test',
+            # Payroll specific
+            'payroll_abnormal_salary_test', 'payroll_excessive_overtime_test',
+            'payroll_ghost_employees_test', 'payroll_duplicate_numbers_test',
+            # Journal
+            'journal_manual_entries_test', 'journal_unsupported_entries_test',
+            'journal_period_end_entries_test', 'journal_unusual_combinations_test',
+            # Data quality
+            'data_quality_missing_data_test', 'data_quality_reasonableness_test', 'data_quality_data_type_test',
+            # Advanced
+            'advanced_sequential_audit_test', 'advanced_network_analysis_test', 'advanced_shell_company_test',
+            # Fraud
+            'fraud_lapping_test',
+            # Anomaly
+            'anomaly_gap_analysis_test', 'anomaly_spike_detection_test',
+            # Trend
+            'trend_seasonal_variance_test',
+            # Compliance
+            'compliance_segregation_duties_test',
+            # Accounting
+            'accounting_footing_test', 'cutoff_analysis_test',
+            # AI
+            'ai_benford_advanced_test', 'ai_contextual_anomaly_test',
+            'ai_isolation_forest_test', 'ai_kmeans_clustering_test',
+            # Sampling
+            'sampling_monetary_unit_test', 'sampling_stratified_test',
+        ]
+    },
+    'sales': {
+        'name': 'فروش',
+        'icon': '🛒',
+        'tests': [
+            # Benford - applicable to sales amounts
+            'benford_first_digit_test', 'benford_first_two_digits_test',
+            'benford_last_two_digits_test', 'benford_difference_test',
+            # Threshold
+            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            # Duplicate
+            'duplicate_transaction_test', 'duplicate_names_test', 'duplicate_sales_pattern_test',
+            # Statistical - profit margin
+            'statistical_zscore_test', 'statistical_iqr_test',
+            'statistical_profit_margin_test',
+            # Cyclical - sales patterns
+            'cyclical_sales_test',
+            # Reconciliation - customer confirmation
+            'reconciliation_customer_confirmation_test',
+            # Zero tests
+            'zero_three_zeros_test', 'zero_round_amounts_test', 'zero_digit_frequency_test',
+            # Sales specific
+            'sales_abnormal_discount_test', 'sales_markup_analysis_test',
+            'sales_customer_employee_test', 'sales_pareto_analysis_test',
+            # Journal
+            'journal_manual_entries_test', 'journal_unsupported_entries_test',
+            'journal_period_end_entries_test', 'journal_unusual_combinations_test',
+            # Data quality
+            'data_quality_missing_data_test', 'data_quality_reasonableness_test', 'data_quality_data_type_test',
+            # Advanced
+            'advanced_sequential_audit_test', 'advanced_network_analysis_test', 'advanced_shell_company_test',
+            # Fraud
+            'fraud_skimming_test', 'fraud_lapping_test',
+            # Anomaly
+            'anomaly_gap_analysis_test', 'anomaly_spike_detection_test',
+            # Trend
+            'trend_seasonal_variance_test',
+            # Ratio
+            'ratio_quick_ratio_test',
+            # Accounting
+            'accounting_footing_test', 'cutoff_analysis_test',
+            # AI
+            'ai_benford_advanced_test', 'ai_contextual_anomaly_test',
+            'ai_isolation_forest_test', 'ai_kmeans_clustering_test',
+            # AR
+            'ar_confirmation_analysis_test',
+            # Sampling
+            'sampling_monetary_unit_test', 'sampling_stratified_test',
+        ]
+    },
+    'fixed_assets': {
+        'name': 'دارایی ثابت',
+        'icon': '🏢',
+        'tests': [
+            # Benford - applicable to asset values
+            'benford_first_digit_test', 'benford_first_two_digits_test',
+            'benford_last_two_digits_test', 'benford_difference_test',
+            # Threshold
+            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            # Duplicate
+            'duplicate_transaction_test', 'duplicate_names_test',
+            # Statistical
+            'statistical_zscore_test', 'statistical_iqr_test',
+            # Zero tests
+            'zero_three_zeros_test', 'zero_round_amounts_test', 'zero_digit_frequency_test',
+            # Inventory tests (asset valuation)
+            'inventory_one_dollar_items_test', 'inventory_valuation_test',
+            # Journal
+            'journal_manual_entries_test', 'journal_unsupported_entries_test',
+            'journal_period_end_entries_test', 'journal_unusual_combinations_test',
+            # Data quality
+            'data_quality_missing_data_test', 'data_quality_reasonableness_test', 'data_quality_data_type_test',
+            # Advanced
+            'advanced_sequential_audit_test', 'advanced_shell_company_test',
+            # Anomaly
+            'anomaly_gap_analysis_test', 'anomaly_spike_detection_test',
+            # Trend
+            'trend_seasonal_variance_test',
+            # Ratio
+            'ratio_debt_to_equity_test',
+            # Compliance
+            'compliance_segregation_duties_test',
+            # Accounting
+            'accounting_footing_test', 'cutoff_analysis_test',
+            # AI
+            'ai_benford_advanced_test', 'ai_contextual_anomaly_test',
+            'ai_isolation_forest_test', 'ai_kmeans_clustering_test',
+            # Sampling
+            'sampling_monetary_unit_test', 'sampling_stratified_test',
+        ]
+    },
+    'procurement': {
+        'name': 'تدارکات',
+        'icon': '🛍️',
+        'tests': [
+            # Benford - applicable to purchase amounts
+            'benford_first_digit_test', 'benford_first_two_digits_test',
+            'benford_last_two_digits_test', 'benford_difference_test',
+            # Threshold
+            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            # Duplicate
+            'duplicate_transaction_test', 'duplicate_names_test',
+            # Statistical - price volatility
+            'statistical_zscore_test', 'statistical_iqr_test',
+            'statistical_price_volatility_test',
+            # Zero tests
+            'zero_three_zeros_test', 'zero_round_amounts_test', 'zero_digit_frequency_test',
+            # Inventory related (procurement affects inventory)
+            'inventory_one_dollar_items_test', 'inventory_price_frequency_test',
+            # Journal
+            'journal_manual_entries_test', 'journal_unsupported_entries_test',
+            'journal_period_end_entries_test', 'journal_unusual_combinations_test',
+            # Data quality
+            'data_quality_missing_data_test', 'data_quality_reasonableness_test', 'data_quality_data_type_test',
+            # Advanced
+            'advanced_sequential_audit_test', 'advanced_network_analysis_test', 'advanced_shell_company_test',
+            # Fraud
+            'fraud_skimming_test',
+            # Anomaly
+            'anomaly_gap_analysis_test', 'anomaly_spike_detection_test',
+            # Trend
+            'trend_seasonal_variance_test',
+            # Compliance
+            'compliance_segregation_duties_test',
+            # Accounting
+            'accounting_footing_test', 'cutoff_analysis_test',
+            # AI
+            'ai_benford_advanced_test', 'ai_contextual_anomaly_test',
+            'ai_isolation_forest_test', 'ai_kmeans_clustering_test',
+            # Sampling
+            'sampling_monetary_unit_test', 'sampling_stratified_test',
+        ]
+    }
+}
+
 
 @app.route('/')
 def index():
     """صفحه اصلی"""
-    return render_template('index.html', audit_tests=AUDIT_TESTS)
+    # Build subsystems with full test details
+    subsystems = {}
+    for subsystem_id, subsystem_info in SUBSYSTEM_MAPPING.items():
+        subsystems[subsystem_id] = {
+            'name': subsystem_info['name'],
+            'icon': subsystem_info['icon'],
+            'tests': []
+        }
+        
+        # Find full test details for each test_id
+        for test_id in subsystem_info['tests']:
+            # Search through all categories to find the test
+            for category_id, category in AUDIT_TESTS.items():
+                for test in category['tests']:
+                    if test['id'] == test_id:
+                        subsystems[subsystem_id]['tests'].append(test)
+                        break
+    
+    return render_template('index.html', 
+                         audit_tests=AUDIT_TESTS, 
+                         subsystems=subsystems)
 
 
 @app.route('/test-requirements/<test_id>')
