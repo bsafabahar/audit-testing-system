@@ -9,9 +9,42 @@ Instructions:
 4. Run query_runner.py to query your data
 """
 from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text, Date, BigInteger, Numeric, event
-from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER
+from sqlalchemy.dialects.mssql import UNIQUEIDENTIFIER as MSSQL_UNIQUEIDENTIFIER
 from sqlalchemy.orm import relationship, Query
 from database import Base
+from config import Config
+from datetime import datetime
+import uuid
+
+# Determine the appropriate UUID type based on database
+def get_uuid_column_type():
+    """Get the appropriate UUID column type based on the database dialect"""
+    connection_string = Config.get_connection_string()
+    if 'sqlite' in connection_string.lower():
+        return String(36)  # Use String for SQLite
+    else:
+        return MSSQL_UNIQUEIDENTIFIER  # Use UNIQUEIDENTIFIER for SQL Server
+
+# Get schema name based on database type
+def get_schema_args(schema_name='af'):
+    """Get schema args based on database type (SQLite doesn't support schemas)"""
+    connection_string = Config.get_connection_string()
+    if 'sqlite' in connection_string.lower():
+        return {}  # No schema for SQLite
+    else:
+        return {'schema': schema_name}
+
+# Get appropriate BigInteger type for autoincrement
+def get_bigint_column_type():
+    """Get the appropriate BigInteger type (SQLite needs Integer for autoincrement)"""
+    connection_string = Config.get_connection_string()
+    if 'sqlite' in connection_string.lower():
+        return Integer  # SQLite requires Integer for autoincrement
+    else:
+        return BigInteger  # SQL Server can use BigInteger
+
+UNIQUEIDENTIFIER = get_uuid_column_type()
+BigIntType = get_bigint_column_type()
 
 
 # Soft Delete Mixin
@@ -74,10 +107,10 @@ class Transaction(Base, SoftDeleteMixin):
     Financial transactions with detailed accounting information
     """
     __tablename__ = 'Transactions'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
     # Primary Key
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
     
     # Document Information
     DocumentDate = Column(DateTime)
@@ -130,10 +163,10 @@ class Transaction(Base, SoftDeleteMixin):
     RecordIndex = Column(Integer, nullable=False, default=0)
     
     # Flags and Status
-    IsCalculated = Column(Boolean, nullable=False)
+    IsCalculated = Column(Boolean, nullable=False, default=False)
     IsClosing = Column(Boolean, nullable=False, default=False)
     IsOpening = Column(Boolean, nullable=False, default=False)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     IsArchived = Column(Boolean, nullable=False, default=False)
     WithoutAttachment = Column(Boolean, nullable=False, default=False)
     IsResidualItemsAudit = Column(Boolean, nullable=False, default=False)
@@ -145,7 +178,7 @@ class Transaction(Base, SoftDeleteMixin):
     EntityState = Column(Integer, nullable=False, default=0)
     
     # Audit Trail
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
@@ -157,7 +190,7 @@ class Transaction(Base, SoftDeleteMixin):
     CommentCount = Column(Integer, nullable=False, default=0)
     
     # Unique Identifiers and References
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     SamplingSectionId = Column(UNIQUEIDENTIFIER)
     AuditHeadingId = Column(BigInteger)
     
@@ -175,10 +208,10 @@ class CheckPayables(Base, SoftDeleteMixin):
     Payable checks information
     """
     __tablename__ = 'CheckPayables'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     DocumentPaymentNumber = Column(String, comment='شماره برگه پرداخت اسناد')
     DocumentPaymentDate = Column(DateTime, nullable=False, comment='تاریخ برگه پرداخت اسناد')
     CheckNumber = Column(String, comment='شماره چک')
@@ -186,11 +219,11 @@ class CheckPayables(Base, SoftDeleteMixin):
     CheckDate = Column(DateTime, nullable=False, comment='تاریخ چک')
     PayeeCode = Column(String, comment='کد دریافتکننده چک')
     PayeeName = Column(String, comment='نام دریافتکننده چک')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -204,10 +237,10 @@ class CheckReceivables(Base, SoftDeleteMixin):
     Receivable checks information
     """
     __tablename__ = 'CheckReceivables'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     DocumentReceiptNumber = Column(String, comment='شماره برگه دریافت اسناد')
     DocumentReceiptDate = Column(DateTime, nullable=False, comment='تاریخ برگه دریافت اسناد')
     CheckNumber = Column(String, comment='شماره چک')
@@ -215,11 +248,11 @@ class CheckReceivables(Base, SoftDeleteMixin):
     CheckDate = Column(DateTime, nullable=False, comment='تاریخ چک')
     DrawerCode = Column(String, comment='کد واگذارکننده چک')
     DrawerName = Column(String, comment='نام واگذارکننده چک')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -233,10 +266,10 @@ class AssetAdditions(Base, SoftDeleteMixin):
     Asset addition transactions
     """
     __tablename__ = 'AssetAdditions'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     FormNumber = Column(String, comment='شماره برگه')
     FormDate = Column(DateTime, nullable=False, comment='تاریخ برگه')
     AssetCode = Column(String, comment='کد اموال')
@@ -245,11 +278,11 @@ class AssetAdditions(Base, SoftDeleteMixin):
     DepreciationMethod = Column(String, comment='روش استهلاک')
     DepreciationRate = Column(Numeric(18, 2), nullable=False, comment='نرخ استهلاک')
     TotalCost = Column(Numeric(18, 2), nullable=False, comment='بهای تمامشده')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -263,10 +296,10 @@ class AssetDisposals(Base, SoftDeleteMixin):
     Asset disposal transactions
     """
     __tablename__ = 'AssetDisposals'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     FormNumber = Column(String, comment='شماره برگه')
     FormDate = Column(DateTime, nullable=False, comment='تاریخ برگه')
     AssetCode = Column(String, comment='کد اموال')
@@ -277,11 +310,11 @@ class AssetDisposals(Base, SoftDeleteMixin):
     TotalCost = Column(Numeric(18, 2), nullable=False, comment='بهای تمامشده')
     AccumulatedDepreciationBeginning = Column(Numeric(18, 2), nullable=False, comment='استهلاک انباشته ابتدای دوره')
     DepreciationDuringPeriod = Column(Numeric(18, 2), nullable=False, comment='استهلاک طی دوره')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -295,10 +328,10 @@ class AssetEndOfPeriods(Base, SoftDeleteMixin):
     Asset end of period balances
     """
     __tablename__ = 'AssetEndOfPeriods'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     AssetCode = Column(String, comment='کد اموال')
     AssetName = Column(String, comment='نام اموال')
     UtilizationDate = Column(DateTime, nullable=False, comment='تاریخ بهرهبرداری')
@@ -308,11 +341,11 @@ class AssetEndOfPeriods(Base, SoftDeleteMixin):
     AccumulatedDepreciationBeginning = Column(Numeric(18, 2), nullable=False, comment='استهلاک انباشته ابتدای دوره')
     DepreciationDuringPeriod = Column(Numeric(18, 2), nullable=False, comment='استهلاک طی دوره')
     AccumulatedDepreciationEnding = Column(Numeric(18, 2), nullable=False, comment='استهلاک انباشته پایان دوره')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -326,10 +359,10 @@ class InventoryIssues(Base, SoftDeleteMixin):
     Inventory issue/consumption transactions
     """
     __tablename__ = 'InventoryIssues'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     IssueNumber = Column(String, comment='شماره حواله انبار')
     IssueDate = Column(DateTime, nullable=False, comment='تاریخ حواله انبار')
     ItemCode = Column(String, comment='کد کالا')
@@ -339,11 +372,11 @@ class InventoryIssues(Base, SoftDeleteMixin):
     Amount = Column(Numeric(18, 2), nullable=False, comment='مبلغ')
     CostCenterCode = Column(String, comment='کد مرکز هزینه')
     CostCenterName = Column(String, comment='نام مرکز هزینه')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -357,10 +390,10 @@ class PurchaseReceipts(Base, SoftDeleteMixin):
     Purchase receipt transactions
     """
     __tablename__ = 'PurchaseReceipts'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     ReceiptNumber = Column(String, comment='شماره رسید انبار')
     ReceiptDate = Column(DateTime, nullable=False, comment='تاریخ رسید انبار')
     ItemCode = Column(String, comment='کد کالا')
@@ -370,11 +403,11 @@ class PurchaseReceipts(Base, SoftDeleteMixin):
     Amount = Column(Numeric(18, 2), nullable=False, comment='مبلغ')
     SupplierCode = Column(String, comment='کد تأمینکننده (بستانکاران)')
     SupplierName = Column(String, comment='نام تأمینکننده (بستانکاران)')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -388,10 +421,10 @@ class PayrollTransactions(Base, SoftDeleteMixin):
     Employee payroll transactions
     """
     __tablename__ = 'PayrollTransactions'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     VoucherNumber = Column(String, comment='شماره سند')
     VoucherDate = Column(DateTime, nullable=False, comment='تاریخ سند')
     Month = Column(String, comment='ماه')
@@ -411,11 +444,11 @@ class PayrollTransactions(Base, SoftDeleteMixin):
     TaxDeduction = Column(Numeric(18, 2), nullable=False, comment='مالیات مکسوره')
     OtherDeductions = Column(Numeric(18, 2), nullable=False, comment='سایر کسورات')
     NetPayment = Column(Numeric(18, 2), nullable=False, comment='خالص پرداختی')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -429,10 +462,10 @@ class SalesReturns(Base, SoftDeleteMixin):
     Sales return transactions
     """
     __tablename__ = 'SalesReturns'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     ReturnNumber = Column(String, comment='شماره برگشت از فروش')
     ReturnDate = Column(DateTime, nullable=False, comment='تاریخ برگشت از فروش')
     CustomerCode = Column(String, comment='کد مشتری')
@@ -442,11 +475,11 @@ class SalesReturns(Base, SoftDeleteMixin):
     Quantity = Column(Numeric(18, 2), nullable=False, comment='مقدار')
     UnitPrice = Column(Numeric(18, 2), nullable=False, comment='نرخ')
     Amount = Column(Numeric(18, 2), nullable=False, comment='مبلغ')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
@@ -460,10 +493,10 @@ class SalesTransactions(Base, SoftDeleteMixin):
     Sales invoice transactions
     """
     __tablename__ = 'SalesTransactions'
-    __table_args__ = {'schema': 'af'}
+    __table_args__ = get_schema_args('af')
     
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Uuid = Column(UNIQUEIDENTIFIER, nullable=False)
+    Id = Column(BigIntType, primary_key=True, autoincrement=True)
+    Uuid = Column(UNIQUEIDENTIFIER, nullable=False, default=lambda: str(uuid.uuid4()))
     InvoiceNumber = Column(String, comment='شماره فاکتور فروش')
     InvoiceDate = Column(DateTime, nullable=False, comment='تاریخ فاکتور فروش')
     CustomerCode = Column(String, comment='کد مشتری')
@@ -473,11 +506,11 @@ class SalesTransactions(Base, SoftDeleteMixin):
     Quantity = Column(Numeric(18, 2), nullable=False, comment='مقدار')
     UnitPrice = Column(Numeric(18, 2), nullable=False, comment='نرخ')
     Amount = Column(Numeric(18, 2), nullable=False, comment='مبلغ')
-    CreationTime = Column(DateTime, nullable=False)
+    CreationTime = Column(DateTime, nullable=False, default=datetime.now)
     CreatorUserId = Column(BigInteger)
     LastModificationTime = Column(DateTime)
     LastModifierUserId = Column(BigInteger)
-    IsDeleted = Column(Boolean, nullable=False)
+    IsDeleted = Column(Boolean, nullable=False, default=False)
     DeleterUserId = Column(BigInteger)
     DeletionTime = Column(DateTime)
     
