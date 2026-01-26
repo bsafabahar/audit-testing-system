@@ -288,6 +288,15 @@ MIT License - Feel free to use and modify as needed.
 pip install -r requirements.txt --upgrade
 ```
 
+## 📋 Available Audit Tests
+
+This system includes **69 comprehensive audit tests** organized into 23 categories. For a complete list:
+
+- **[لیست آزمون‌های حسابرسی (Persian)](./لیست_آزمون‌های_حسابرسی.md)** - Complete documentation in Persian
+- **[Test List Summary (English)](./TEST_LIST_SUMMARY.md)** - Quick reference guide
+
+Categories include: Benford's Law, Threshold Analysis, Duplicate Detection, Statistical Tests, Fraud Detection, AI/ML Tests, and many more.
+
 ## 📚 Additional Resources
 
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
