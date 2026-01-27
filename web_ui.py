@@ -654,6 +654,10 @@ def run_test(test_id):
         except:
             params = {}
         
+        # تنظیم پارامترها برای query_runner
+        import query_runner
+        query_runner.INPUT_PARAMETERS = params
+        
         # اجرای آزمون
         session = get_db()
         
@@ -674,6 +678,35 @@ def run_test(test_id):
         return jsonify({
             'error': f'خطا در اجرای آزمون: {str(e)}',
             'traceback': traceback.format_exc()
+        }), 500
+
+
+@app.route('/get-test-parameters/<test_id>', methods=['GET'])
+def get_test_parameters(test_id):
+    """دریافت پارامترهای یک آزمون"""
+    try:
+        # بارگذاری ماژول آزمون
+        module_path = f'queries.{test_id}'
+        test_module = importlib.import_module(module_path)
+        
+        # دریافت تعریف پارامترها
+        if hasattr(test_module, 'define'):
+            definitions = test_module.define()
+            parameters = definitions.get('parameters', [])
+            
+            return jsonify({
+                'success': True,
+                'parameters': parameters
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'parameters': []
+            })
+    
+    except Exception as e:
+        return jsonify({
+            'error': f'خطا در دریافت پارامترها: {str(e)}'
         }), 500
 
 
