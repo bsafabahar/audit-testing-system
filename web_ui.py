@@ -685,6 +685,12 @@ def run_test(test_id):
 def get_test_parameters(test_id):
     """دریافت پارامترهای یک آزمون"""
     try:
+        # بررسی امنیت test_id
+        if not test_id.replace('_', '').isalnum():
+            return jsonify({
+                'error': 'Invalid test ID format'
+            }), 400
+        
         # بارگذاری ماژول آزمون
         module_path = f'queries.{test_id}'
         test_module = importlib.import_module(module_path)

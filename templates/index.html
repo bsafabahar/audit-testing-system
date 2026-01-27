@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم آزمون‌های حسابرسی</title>
-    <!-- Vazir Persian Font -->
+    <!-- Vazir Persian Font from official CDN -->
+    <!-- This is the official repository for Vazir font: https://github.com/rastikerdar/vazir-font -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
     <style>
         * {
@@ -1398,10 +1399,13 @@
                         params[param.key] = element.checked;
                     } else if (param.type === 'number') {
                         const value = parseFloat(element.value);
-                        params[param.key] = isNaN(value) ? param.defaultValue : value;
+                        params[param.key] = isNaN(value) ? (param.defaultValue || 0) : value;
                     } else {
-                        params[param.key] = element.value || param.defaultValue;
+                        params[param.key] = element.value || param.defaultValue || '';
                     }
+                } else if (param.defaultValue !== undefined && param.defaultValue !== null) {
+                    // If element not found, use default value if available
+                    params[param.key] = param.defaultValue;
                 }
             });
             
