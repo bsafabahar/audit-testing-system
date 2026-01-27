@@ -23,13 +23,16 @@ import statistics
 
 def define() -> QueryDefinition:
     """تعریف پارامترها و اسکیما"""
+    from parameters import option
+    
     parameters = [
         param_select('analysisType', 'نوع تحلیل',
-                    options=['level_trend', 'seasonal_fluctuation', 'turnover'],
-                    default_value='seasonal_fluctuation',
-                    labels={'level_trend': 'روند سطح موجودی',
-                           'seasonal_fluctuation': 'نوسانات فصلی',
-                           'turnover': 'تحلیل گردش'}),
+                    options=[
+                        option('level_trend', 'روند سطح موجودی'),
+                        option('seasonal_fluctuation', 'نوسانات فصلی'),
+                        option('turnover', 'تحلیل گردش')
+                    ],
+                    default_value='seasonal_fluctuation'),
         param_number('volatilityThreshold', 'آستانه نوسان (%)', default_value=40.0),
         param_number('turnoverThreshold', 'آستانه گردش (مقدار)', default_value=2.0),
         param_number('seasonalPeriod', 'دوره فصلی (ماه)', default_value=12),

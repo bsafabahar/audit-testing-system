@@ -21,21 +21,31 @@ import statistics
 
 def define() -> QueryDefinition:
     """تعریف پارامترها و اسکیما"""
+    from parameters import option
+    
     parameters = [
         param_string('columnName', 'نام ستون برای آزمون', default_value='Debit'),
         param_select('thresholdMethod', 'روش محاسبه آستانه',
-                    options=['multiplier', 'percentile', 'stdev'],
-                    default_value='multiplier',
-                    labels={'multiplier': 'ضریب میانگین', 'percentile': 'صدک', 'stdev': 'انحراف معیار'}),
+                    options=[
+                        option('multiplier', 'ضریب میانگین'),
+                        option('percentile', 'صدک'),
+                        option('stdev', 'انحراف معیار')
+                    ],
+                    default_value='multiplier'),
         param_number('multiplierValue', 'مقدار ضریب (برای روش ضریب)', default_value=2.0),
         param_select('percentileValue', 'مقدار صدک (برای روش صدک)',
-                    options=['95', '90', '85'],
-                    default_value='95',
-                    labels={'95': 'بالای 95%', '90': 'بالای 90%', '85': 'بالای 85%'}),
+                    options=[
+                        option('95', 'بالای 95%'),
+                        option('90', 'بالای 90%'),
+                        option('85', 'بالای 85%')
+                    ],
+                    default_value='95'),
         param_select('stdevValue', 'تعداد انحراف معیار (برای روش stdev)',
-                    options=['2', '3'],
-                    default_value='2',
-                    labels={'2': '2 سیگما (95%)', '3': '3 سیگما (99.7%)'}),
+                    options=[
+                        option('2', '2 سیگما (95%)'),
+                        option('3', '3 سیگما (99.7%)')
+                    ],
+                    default_value='2'),
         param_number('materialityThreshold', 'آستانه اهمیت (تومان)', default_value=1000000.0),
         param_number('limit', 'تعداد رکورد', default_value=100)
     ]

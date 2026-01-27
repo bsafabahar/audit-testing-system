@@ -21,13 +21,17 @@ import statistics
 
 def define() -> QueryDefinition:
     """تعریف پارامترها و اسکیما"""
+    from parameters import option
+    
     parameters = [
         param_string('columnName', 'نام ستون برای آزمون', default_value='Debit'),
         param_number('multiplier', 'ضریب (Multiplier)', default_value=1.5),
         param_select('limitMethod', 'روش محاسبه حد',
-                    options=['mean-based', 'stdev-based'],
-                    default_value='mean-based',
-                    labels={'mean-based': 'بر اساس میانگین', 'stdev-based': 'بر اساس انحراف معیار'}),
+                    options=[
+                        option('mean-based', 'بر اساس میانگین'),
+                        option('stdev-based', 'بر اساس انحراف معیار')
+                    ],
+                    default_value='mean-based'),
         param_number('limit', 'تعداد رکورد', default_value=100)
     ]
     
