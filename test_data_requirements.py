@@ -383,17 +383,19 @@ def get_test_requirements(test_id: str) -> dict:
         'files_info': files_info
     }
 
-def get_all_required_files(test_ids: list) -> dict:
+def get_all_required_files(test_ids: list) -> list:
     """دریافت تمام فایل‌های مورد نیاز برای لیستی از آزمون‌ها"""
     all_files = set()
-    files_detail = {}
+    files_detail = []
+    file_keys_added = set()
     
     for test_id in test_ids:
         req = get_test_requirements(test_id)
         all_files.update(req['required_files'])
     
     for file_key in all_files:
-        if file_key in DATA_FILES:
-            files_detail[file_key] = DATA_FILES[file_key]
+        if file_key in DATA_FILES and file_key not in file_keys_added:
+            files_detail.append(DATA_FILES[file_key]['file'])
+            file_keys_added.add(file_key)
     
     return files_detail
