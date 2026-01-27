@@ -7,6 +7,8 @@
     <!-- Vazir Persian Font from official CDN -->
     <!-- This is the official repository for Vazir font: https://github.com/rastikerdar/vazir-font -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -28,36 +30,43 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            overflow: visible;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 40px);
+            min-height: calc(100vh - 40px);
         }
 
         /* Header */
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 12px 20px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 2.2em;
-            margin-bottom: 5px;
+            font-size: 1.3em;
+            margin-bottom: 3px;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 0.85em;
             opacity: 0.95;
         }
 
-        /* Main Layout: Top Panel + Bottom Content */
+        /* Main Layout: Tree Menu (Right) + Content Area (Left) */
         .main-content {
+            display: flex;
+            flex: 1;
+            overflow: visible;
+        }
+
+        /* Content Area - Contains Top Panel & Results */
+        .content-area {
             display: flex;
             flex-direction: column;
             flex: 1;
-            overflow: hidden;
+            overflow: visible;
         }
 
         /* Top Panel - Settings & Files */
@@ -65,8 +74,7 @@
             background: #f8f9fa;
             border-bottom: 3px solid #667eea;
             padding: 20px;
-            overflow-y: auto;
-            max-height: 35vh;
+            overflow: visible;
         }
 
         .top-panel h3 {
@@ -162,14 +170,14 @@
         .bottom-content {
             display: flex;
             flex: 1;
-            overflow: hidden;
+            overflow: visible;
         }
 
         /* Results Area (Left/Main) */
         .results-area {
             flex: 1;
             padding: 20px;
-            overflow-y: auto;
+            overflow: visible;
             background: #fafafa;
         }
 
@@ -295,10 +303,12 @@
         /* Tree Menu (Right Sidebar) */
         .tree-menu {
             width: 350px;
+            min-width: 350px;
             background: #ffffff;
             border-left: 3px solid #667eea;
-            overflow-y: auto;
+            overflow: visible;
             padding: 20px;
+            flex-shrink: 0;
         }
 
         .tree-menu h3 {
@@ -508,6 +518,198 @@
             margin-bottom: 20px;
         }
 
+        /* Info Button */
+        .info-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+        }
+
+        .info-btn:hover {
+            background: #138496;
+            transform: scale(1.1);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            right: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+            direction: rtl;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.8em;
+            cursor: pointer;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+            line-height: 1.8;
+        }
+
+        /* Markdown Styling */
+        .markdown-content h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 20px;
+            font-size: 1.8em;
+        }
+
+        .markdown-content h2 {
+            color: #764ba2;
+            margin-top: 25px;
+            font-size: 1.5em;
+            border-right: 4px solid #764ba2;
+            padding-right: 15px;
+        }
+
+        .markdown-content h3 {
+            color: #667eea;
+            margin-top: 20px;
+            font-size: 1.3em;
+        }
+
+        .markdown-content p {
+            margin: 15px 0;
+            text-align: justify;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+            margin: 15px 0;
+            padding-right: 30px;
+        }
+
+        .markdown-content li {
+            margin: 8px 0;
+        }
+
+        .markdown-content code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        .markdown-content pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-right: 4px solid #667eea;
+            overflow-x: auto;
+        }
+
+        .markdown-content blockquote {
+            background: #fff3cd;
+            border-right: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .markdown-content th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: right;
+        }
+
+        .markdown-content td {
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .markdown-content tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .loading-modal {
+            text-align: center;
+            padding: 40px;
+        }
+
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 8px;
@@ -531,19 +733,22 @@
         @media (max-width: 1200px) {
             .tree-menu {
                 width: 300px;
+                min-width: 300px;
             }
         }
 
         @media (max-width: 768px) {
-            .bottom-content {
-                flex-direction: column-reverse;
+            .main-content {
+                flex-direction: column;
             }
 
             .tree-menu {
                 width: 100%;
+                min-width: auto;
                 max-height: 300px;
                 border-left: none;
-                border-top: 3px solid #667eea;
+                border-bottom: 3px solid #667eea;
+                order: -1;
             }
 
             .container {
@@ -561,68 +766,71 @@
         </div>
 
         <div class="main-content">
-            <!-- Top Panel: Settings & File Upload -->
-            <div class="top-panel">
-                <h3>⚙️ تنظیمات و فایل‌های آزمون</h3>
-                
-                <div class="settings-section">
-                    <div class="test-info">
-                        <h4>آزمون‌های انتخاب شده:</h4>
-                        <div id="selectedTestBadges">
-                            <div class="no-selection">
-                                <div class="no-selection-icon">📋</div>
-                                <p>هیچ آزمونی انتخاب نشده است</p>
-                                <p style="font-size: 0.9em; margin-top: 10px;">لطفاً از منوی سمت راست یک یا چند آزمون را انتخاب کنید</p>
-                            </div>
-                        </div>
+            <!-- Tree Menu (Right Sidebar) - Full Height -->
+            <div class="tree-menu">
+                <h3>📂 لیست آزمون‌ها</h3>
+                {% for category_id, category in audit_tests.items() %}
+                <div class="tree-category">
+                    <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
+                        <span>{{ category.name }}</span>
+                        <span class="category-count">{{ category.tests|length }}</span>
                     </div>
-
-                    <div class="upload-section" id="uploadSection" style="display: none;">
-                        <h4>📤 آپلود فایل‌های داده:</h4>
-                        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-                            <input type="file" id="fileInput" accept=".xlsx,.xls" multiple onchange="uploadFiles()">
-                            <div class="upload-icon">📁</div>
-                            <h3>کلیک کنید یا فایل‌ها را اینجا بکشید</h3>
-                            <p>فرمت‌های مجاز: Excel (.xlsx, .xls)</p>
+                    <div class="test-list" id="list-{{ category_id }}">
+                        {% for test in category.tests %}
+                        <div class="test-item" id="item-{{ test.id }}">
+                            <button class="info-btn" onclick="event.stopPropagation(); showTestInfo('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')" title="اطلاعات بیشتر">ℹ️</button>
+                            <span class="test-icon" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.icon }}</span>
+                            <span class="test-name" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.name }}</span>
                         </div>
-                        <div class="file-status" id="fileStatus"></div>
+                        {% endfor %}
                     </div>
                 </div>
+                {% endfor %}
             </div>
 
-            <!-- Bottom Content: Results + Tree Menu -->
-            <div class="bottom-content">
-                <!-- Results Area (Main/Left) -->
-                <div class="results-area">
-                    <h3>📊 نتایج آزمون‌ها</h3>
-                    <div id="resultsContainer">
-                        <div class="no-selection">
-                            <div class="no-selection-icon">📈</div>
-                            <p>نتایج اینجا نمایش داده می‌شود</p>
-                            <p style="font-size: 0.9em; margin-top: 10px;">پس از انتخاب آزمون و آپلود فایل، دکمه "اجرای آزمون‌ها" را فشار دهید</p>
+            <!-- Content Area - Settings & Results -->
+            <div class="content-area">
+                <!-- Top Panel: Settings & File Upload -->
+                <div class="top-panel">
+                    <h3>⚙️ تنظیمات و فایل‌های آزمون</h3>
+                    
+                    <div class="settings-section">
+                        <div class="test-info">
+                            <h4>آزمون‌های انتخاب شده:</h4>
+                            <div id="selectedTestBadges">
+                                <div class="no-selection">
+                                    <div class="no-selection-icon">📋</div>
+                                    <p>هیچ آزمونی انتخاب نشده است</p>
+                                    <p style="font-size: 0.9em; margin-top: 10px;">لطفاً از منوی سمت راست یک یا چند آزمون را انتخاب کنید</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="upload-section" id="uploadSection" style="display: none;">
+                            <h4>📤 آپلود فایل‌های داده:</h4>
+                            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                                <input type="file" id="fileInput" accept=".xlsx,.xls" multiple onchange="uploadFiles()">
+                                <div class="upload-icon">📁</div>
+                                <h3>کلیک کنید یا فایل‌ها را اینجا بکشید</h3>
+                                <p>فرمت‌های مجاز: Excel (.xlsx, .xls)</p>
+                            </div>
+                            <div class="file-status" id="fileStatus"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Tree Menu (Right Sidebar) -->
-                <div class="tree-menu">
-                    <h3>📂 لیست آزمون‌ها</h3>
-                    {% for category_id, category in audit_tests.items() %}
-                    <div class="tree-category">
-                        <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
-                            <span>{{ category.name }}</span>
-                            <span class="category-count">{{ category.tests|length }}</span>
-                        </div>
-                        <div class="test-list" id="list-{{ category_id }}">
-                            {% for test in category.tests %}
-                            <div class="test-item" id="item-{{ test.id }}" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">
-                                <span class="test-icon">{{ test.icon }}</span>
-                                <span class="test-name">{{ test.name }}</span>
+                <!-- Results Area -->
+                <div class="bottom-content">
+                    <div class="results-area">
+                        <h3>📊 نتایج آزمون‌ها</h3>
+                        <div id="resultsContainer">
+                            <div class="no-selection">
+                                <div class="no-selection-icon">📈</div>
+                                <p>نتایج اینجا نمایش داده می‌شود</p>
+                                <p style="font-size: 0.9em; margin-top: 10px;">پس از انتخاب آزمون و آپلود فایل، دکمه "اجرای آزمون‌ها" را فشار دهید</p>
                             </div>
-                            {% endfor %}
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -633,6 +841,24 @@
             <button class="btn-run" id="btnRun" onclick="runTests()" disabled>
                 ▶️ اجرای آزمون‌ها
             </button>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal" class="modal" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modalTitle">📖 اطلاعات آزمون</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent" class="markdown-content">
+                    <div class="loading-modal">
+                        <div class="spinner"></div>
+                        <p>در حال بارگذاری...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -655,15 +881,104 @@
             }
         }
 
+        // Show test info modal
+        async function showTestInfo(testId, testName, testIcon) {
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalTitle.innerHTML = `${testIcon} ${testName}`;
+            modalContent.innerHTML = `
+                <div class="loading-modal">
+                    <div class="spinner"></div>
+                    <p>در حال بارگذاری...</p>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+            
+            try {
+                const response = await fetch(`/test-description/${testId}`);
+                const data = await response.json();
+                
+                if (data.success && data.description) {
+                    // استفاده از marked.js برای تبدیل markdown به HTML
+                    if (typeof marked !== 'undefined') {
+                        marked.setOptions({
+                            breaks: true,
+                            gfm: true
+                        });
+                        modalContent.innerHTML = marked.parse(data.description);
+                    } else {
+                        // تبدیل ساده اگر marked.js لود نشده
+                        let html = data.description;
+                        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+                        html = html.replace(/^## (.+)$/gm, '<h2>$2</h2>');
+                        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+                        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+                        html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
+                        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+                        html = html.split('\n\n').map(para => '<p>' + para + '</p>').join('\n');
+                        modalContent.innerHTML = html;
+                    }
+                } else {
+                    modalContent.innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <p style="color: #dc3545; font-size: 1.2em;">⚠️ توضیحات این آزمون یافت نشد</p>
+                            <p style="color: #6c757d; margin-top: 10px;">فایل ${testId}.md موجود نیست</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                modalContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <p style="color: #dc3545; font-size: 1.2em;">❌ خطا در دریافت اطلاعات</p>
+                        <p style="color: #6c757d; margin-top: 10px;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('infoModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
         // Select/deselect test
-        function selectTest(testId, testName, testIcon) {
+        async function selectTest(testId, testName, testIcon) {
             const item = document.getElementById('item-' + testId);
             
             if (selectedTests.has(testId)) {
                 selectedTests.delete(testId);
                 item.classList.remove('selected');
             } else {
-                selectedTests.set(testId, { name: testName, icon: testIcon });
+                // دریافت نیازمندی‌های فایل برای این آزمون
+                try {
+                    const response = await fetch(`/test-requirements/${testId}`);
+                    const data = await response.json();
+                    const requirements = data.success ? data.requirements : null;
+                    
+                    selectedTests.set(testId, { 
+                        name: testName, 
+                        icon: testIcon,
+                        requirements: requirements 
+                    });
+                } catch (error) {
+                    selectedTests.set(testId, { 
+                        name: testName, 
+                        icon: testIcon,
+                        requirements: null
+                    });
+                }
                 item.classList.add('selected');
             }
             
@@ -672,7 +987,7 @@
         }
 
         // Update selected test badges in top panel
-        function updateSelectedBadges() {
+        async function updateSelectedBadges() {
             const container = document.getElementById('selectedTestBadges');
             const uploadSection = document.getElementById('uploadSection');
             
@@ -685,14 +1000,79 @@
                     </div>
                 `;
                 uploadSection.style.display = 'none';
-            } else {
-                let html = '';
-                selectedTests.forEach((test, id) => {
-                    html += `<span class="test-badge">${test.icon} ${test.name}</span>`;
-                });
-                container.innerHTML = html;
-                uploadSection.style.display = 'block';
+                return;
             }
+            
+            // نمایش آزمون‌های انتخاب شده
+            let html = '<div style="margin-bottom: 15px;">';
+            selectedTests.forEach((test, id) => {
+                html += `<span class="test-badge">${test.icon} ${test.name}</span>`;
+            });
+            html += '</div>';
+            
+            // نمایش در حال بارگذاری
+            html += `<div id="filesRequiredBox" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-top: 10px; text-align: center;">
+                <span style="color: #667eea;">⏳ در حال دریافت فایل‌های مورد نیاز...</span>
+            </div>`;
+            
+            container.innerHTML = html;
+            
+            // دریافت فایل‌های مورد نیاز
+            const testIds = Array.from(selectedTests.keys());
+            try {
+                const response = await fetch('/tests-requirements', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test_ids: testIds })
+                });
+                const data = await response.json();
+                
+                console.log('Requirements response:', data);
+                
+                let filesHtml = '';
+                if (data.success && data.files && data.files.length > 0) {
+                    filesHtml = `
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 15px; border-right: 4px solid #ffc107;">
+                            <h4 style="color: #856404; margin-bottom: 10px; font-size: 1.05em;">📋 فایل‌های مورد نیاز برای آزمون‌های انتخاب شده:</h4>
+                            <div style="color: #856404; font-size: 0.95em; line-height: 1.8;">
+                    `;
+                    data.files.forEach(file => {
+                        filesHtml += `<div style="padding: 5px 0; font-weight: bold;">✓ ${file}</div>`;
+                    });
+                    filesHtml += `
+                            </div>
+                            <p style="margin-top: 10px; font-size: 0.85em; color: #856404; font-style: italic;">
+                                💡 لطفاً این فایل‌ها را از پوشه excel_sample_data آپلود کنید
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    filesHtml = `
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 15px; border-right: 4px solid #dc3545;">
+                            <p style="color: #721c24;">⚠️ اطلاعات فایل‌های مورد نیاز یافت نشد</p>
+                        </div>
+                    `;
+                }
+                
+                // به‌روزرسانی باکس
+                const filesBox = document.getElementById('filesRequiredBox');
+                if (filesBox) {
+                    filesBox.outerHTML = filesHtml;
+                }
+                
+            } catch (error) {
+                console.error('خطا در دریافت نیازمندی‌ها:', error);
+                const filesBox = document.getElementById('filesRequiredBox');
+                if (filesBox) {
+                    filesBox.outerHTML = `
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 15px; border-right: 4px solid #dc3545;">
+                            <p style="color: #721c24;">❌ خطا در دریافت اطلاعات: ${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            uploadSection.style.display = 'block';
         }
 
         // Upload files
@@ -705,6 +1085,8 @@
             const statusDiv = document.getElementById('fileStatus');
             statusDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>در حال آپلود فایل‌ها...</p></div>';
 
+            let resultsHtml = '';
+            
             for (let file of files) {
                 const formData = new FormData();
                 formData.append('file', file);
@@ -719,33 +1101,32 @@
 
                     if (result.success || result.records) {
                         uploadedFiles.set(file.name, result.records || 0);
-                        const fileHtml = `
+                        resultsHtml += `
                             <div class="file-item success">
                                 <span>✅ ${file.name}</span>
                                 <span>${result.records || 0} رکورد</span>
                             </div>
                         `;
-                        statusDiv.innerHTML += fileHtml;
                     } else {
-                        const fileHtml = `
+                        resultsHtml += `
                             <div class="file-item error">
                                 <span>❌ ${file.name}</span>
                                 <span>${result.error || 'خطا'}</span>
                             </div>
                         `;
-                        statusDiv.innerHTML += fileHtml;
                     }
                 } catch (error) {
-                    const fileHtml = `
+                    resultsHtml += `
                         <div class="file-item error">
                             <span>❌ ${file.name}</span>
                             <span>خطای شبکه</span>
                         </div>
                     `;
-                    statusDiv.innerHTML += fileHtml;
                 }
             }
 
+            // نمایش نتایج نهایی
+            statusDiv.innerHTML = resultsHtml;
             updateRunButton();
         }
 
@@ -784,7 +1165,7 @@
                     const response = await fetch(`/run-test/${testId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(params)
+                        body: JSON.stringify({})
                     });
 
                     const result = await response.json();

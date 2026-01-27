@@ -592,7 +592,11 @@ def upload_file():
         file.save(filepath)
         
         # خواندن فایل اکسل
-        df = pd.read_excel(filepath)
+        try:
+            df = pd.read_excel(filepath)
+            records_count = len(df)
+        except Exception as e:
+            return jsonify({'error': f'خطا در خواندن فایل اکسل: {str(e)}'}), 400
         
         # تبدیل نام ستون‌ها
         column_mapping = {
@@ -608,7 +612,16 @@ def upload_file():
         df.rename(columns=column_mapping, inplace=True)
         
         # وارد کردن به دیتابیس
-        session = get_write_session()
+        try:
+            session = get_write_session()
+        except Exception as e:
+            # اگر دیتابیس در دسترس نیست، فقط فایل را ذخیره کن
+            return jsonify({
+                'success': True,
+                'message': f'فایل آپلود شد ({records_count} رکورد) - دیتابیس در دسترس نیست',
+                'records': records_count,
+                'warning': 'دیتابیس متصل نیست'
+            })
         
         try:
             # پاک کردن داده‌های قبلی (اختیاری)
@@ -617,11 +630,11 @@ def upload_file():
             records_added = 0
             for _, row in df.iterrows():
                 transaction = Transaction(
-                    DocumentDate=pd.to_datetime(row.get('DocumentDate')),
-                    DocumentNumber=int(row.get('DocumentNumber', 0)),
+                    DocumentDate=pd.to_datetime(row.get('DocumentDate')) if pd.notna(row.get('DocumentDate')) else None,
+                    DocumentNumber=int(row.get('DocumentNumber', 0)) if pd.notna(row.get('DocumentNumber')) else 0,
                     AccountCode=str(row.get('AccountCode', '')),
-                    Debit=float(row.get('Debit', 0)),
-                    Credit=float(row.get('Credit', 0)),
+                    Debit=float(row.get('Debit', 0)) if pd.notna(row.get('Debit')) else 0,
+                    Credit=float(row.get('Credit', 0)) if pd.notna(row.get('Credit')) else 0,
                     Description=str(row.get('Description', ''))
                 )
                 session.add(transaction)
