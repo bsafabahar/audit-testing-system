@@ -144,6 +144,7 @@ def analyze_inventory_level_trend(item_data, threshold):
                 pattern_type = determine_inventory_trend_pattern(trend_change, volatility, threshold)
             else:
                 pattern_type = 'داده ناکافی'
+                trend_change = 0
             
             # فقط موارد با نوسان بالا یا الگوی خاص
             if volatility >= threshold or abs(trend_change) >= threshold:

@@ -91,7 +91,9 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         threshold = mean * multiplier_value
     elif threshold_method == 'percentile':
         amounts_sorted = sorted(amounts)
-        threshold = statistics.quantiles(amounts_sorted, n=100)[percentile_value - 1]
+        # استفاده از روش ساده برای محاسبه صدک
+        index = int(len(amounts_sorted) * (percentile_value / 100.0))
+        threshold = amounts_sorted[min(index, len(amounts_sorted) - 1)]
     elif threshold_method == 'stdev':
         mean = statistics.mean(amounts)
         stdev = statistics.stdev(amounts) if len(amounts) > 1 else 0

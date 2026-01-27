@@ -81,17 +81,16 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     # مرتب‌سازی دوره‌ها
     sorted_periods = sorted(period_sales.items())
     
-    # محاسبه شاخص‌های فصلی
-    seasonal_indices = calculate_seasonal_indices(sorted_periods, seasonal_period)
-    
     # تحلیل بر اساس روش انتخابی
     data = []
     
     if analysis_method == 'time_series':
+        seasonal_indices = calculate_seasonal_indices(sorted_periods, seasonal_period)
         data = analyze_time_series(sorted_periods, seasonal_indices, deviation_threshold)
     elif analysis_method == 'moving_average':
         data = analyze_moving_average(sorted_periods, window_size, deviation_threshold)
     elif analysis_method == 'seasonal_index':
+        seasonal_indices = calculate_seasonal_indices(sorted_periods, seasonal_period)
         data = analyze_seasonal_index(sorted_periods, seasonal_indices, seasonal_period, deviation_threshold)
     
     # مرتب‌سازی بر اساس انحراف
