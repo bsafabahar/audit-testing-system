@@ -1293,7 +1293,10 @@
         }
 
         function renderParameter(testId, param) {
-            const inputId = `param-${testId}-${param.key}`;
+            // Sanitize testId and param.key to prevent XSS
+            const safeTestId = testId.replace(/[^a-zA-Z0-9_]/g, '');
+            const safeKey = param.key.replace(/[^a-zA-Z0-9_]/g, '');
+            const inputId = `param-${safeTestId}-${safeKey}`;
             const required = param.required ? '<span class="param-required">*</span>' : '';
             
             let inputHtml = '';
@@ -1356,7 +1359,7 @@
                     inputHtml = `<select id="${inputId}" class="param-select" ${param.required ? 'required' : ''}>`;
                     if (param.options) {
                         param.options.forEach(option => {
-                            const selected = option.value == param.defaultValue ? 'selected' : '';
+                            const selected = String(option.value) === String(param.defaultValue) ? 'selected' : '';
                             inputHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
                         });
                     }
@@ -1391,7 +1394,10 @@
             }
             
             testParams.forEach(param => {
-                const inputId = `param-${testId}-${param.key}`;
+                // Sanitize for consistency with renderParameter
+                const safeTestId = testId.replace(/[^a-zA-Z0-9_]/g, '');
+                const safeKey = param.key.replace(/[^a-zA-Z0-9_]/g, '');
+                const inputId = `param-${safeTestId}-${safeKey}`;
                 const element = document.getElementById(inputId);
                 
                 if (element) {
@@ -1399,9 +1405,15 @@
                         params[param.key] = element.checked;
                     } else if (param.type === 'number') {
                         const value = parseFloat(element.value);
-                        params[param.key] = isNaN(value) ? (param.defaultValue || 0) : value;
+                        if (!isNaN(value)) {
+                            params[param.key] = value;
+                        } else if (param.defaultValue !== undefined && param.defaultValue !== null) {
+                            params[param.key] = param.defaultValue;
+                        }
+                        // If NaN and no default, don't include the parameter
                     } else {
-                        params[param.key] = element.value || param.defaultValue || '';
+                        const strValue = element.value || '';
+                        params[param.key] = strValue || param.defaultValue || '';
                     }
                 } else if (param.defaultValue !== undefined && param.defaultValue !== null) {
                     // If element not found, use default value if available

@@ -685,11 +685,22 @@ def run_test(test_id):
 def get_test_parameters(test_id):
     """دریافت پارامترهای یک آزمون"""
     try:
-        # بررسی امنیت test_id
-        if not test_id.replace('_', '').isalnum():
+        # بررسی امنیت test_id - جلوگیری از path traversal و محدود کردن به فرمت مجاز
+        if not test_id.replace('_', '').isalnum() or '..' in test_id or '/' in test_id or '\\' in test_id:
             return jsonify({
                 'error': 'Invalid test ID format'
             }), 400
+        
+        # بررسی اینکه test_id در لیست آزمون‌های مجاز باشد
+        valid_test_ids = set()
+        for category in AUDIT_TESTS.values():
+            for test in category['tests']:
+                valid_test_ids.add(test['id'])
+        
+        if test_id not in valid_test_ids:
+            return jsonify({
+                'error': 'Test ID not found'
+            }), 404
         
         # بارگذاری ماژول آزمون
         module_path = f'queries.{test_id}'
