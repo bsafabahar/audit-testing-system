@@ -22,13 +22,18 @@ import math
 
 def define() -> QueryDefinition:
     """تعریف پارامترها و اسکیما"""
+    from parameters import option
+    
     parameters = [
         param_string('columnName', 'نام ستون برای آزمون', default_value='Debit'),
         param_number('varianceThreshold', 'آستانه واریانس (درصد)', default_value=50.0),
         param_select('deviationType', 'نوع انحراف', 
-                    options=['both', 'above', 'below'], 
-                    default_value='both',
-                    labels={'both': 'دوطرفه', 'above': 'فقط بالاتر', 'below': 'فقط پایین‌تر'}),
+                    options=[
+                        option('both', 'دوطرفه'),
+                        option('above', 'فقط بالاتر'),
+                        option('below', 'فقط پایین‌تر')
+                    ], 
+                    default_value='both'),
         param_number('limit', 'تعداد رکورد', default_value=100)
     ]
     

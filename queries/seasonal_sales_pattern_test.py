@@ -22,13 +22,16 @@ import statistics
 
 def define() -> QueryDefinition:
     """تعریف پارامترها و اسکیما"""
+    from parameters import option
+    
     parameters = [
         param_select('analysisMethod', 'روش تحلیل',
-                    options=['time_series', 'moving_average', 'seasonal_index'],
-                    default_value='time_series',
-                    labels={'time_series': 'تجزیه سری زمانی', 
-                           'moving_average': 'میانگین متحرک',
-                           'seasonal_index': 'شاخص فصلی'}),
+                    options=[
+                        option('time_series', 'تجزیه سری زمانی'),
+                        option('moving_average', 'میانگین متحرک'),
+                        option('seasonal_index', 'شاخص فصلی')
+                    ],
+                    default_value='time_series'),
         param_number('windowSize', 'اندازه پنجره (ماه)', default_value=3),
         param_number('deviationThreshold', 'آستانه انحراف (%)', default_value=30.0),
         param_number('seasonalPeriod', 'دوره فصلی (ماه)', default_value=12),

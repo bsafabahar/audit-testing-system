@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم آزمون‌های حسابرسی</title>
+    <!-- Vazir Persian Font from official CDN -->
+    <!-- This is the official repository for Vazir font: https://github.com/rastikerdar/vazir-font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
     <style>
         * {
             margin: 0;
@@ -710,6 +713,102 @@
             border: 2px solid #f5c6cb;
         }
 
+        /* Parameter Forms */
+        .parameters-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 2px solid #dee2e6;
+        }
+
+        .parameters-section h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .parameter-form {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .param-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .param-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        .param-required {
+            color: #dc3545;
+            margin-right: 5px;
+        }
+
+        .param-input,
+        .param-select {
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Vazir', 'Tahoma', sans-serif;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .param-input:focus,
+        .param-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .param-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .param-checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .test-parameters-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .test-parameters-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .test-parameters-header h4 {
+            color: #495057;
+            font-size: 1.2em;
+            margin: 0;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .steps-container {
@@ -898,6 +997,15 @@
                     <div class="file-status" id="fileStatus"></div>
                 </div>
 
+                <!-- Parameters Section -->
+                <div class="parameters-section" id="parametersSection" style="display: none;">
+                    <h3>
+                        <span>⚙️</span>
+                        <span>تنظیمات پارامترهای آزمون</span>
+                    </h3>
+                    <div id="parametersContainer"></div>
+                </div>
+
                 <div class="button-group">
                     <button class="btn btn-secondary" onclick="goToStep1()">
                         <span>🔙</span>
@@ -1082,6 +1190,9 @@
             
             // دریافت نیازمندی‌های فایل از سرور
             await loadFileRequirements();
+            
+            // بارگذاری پارامترهای آزمون‌ها
+            await loadTestParameters();
         }
 
         async function loadFileRequirements() {
@@ -1125,6 +1236,192 @@
             
             html += '</div>';
             reqBox.innerHTML = html;
+        }
+
+        // Global object to store test parameters
+        let testParametersData = new Map();
+
+        async function loadTestParameters() {
+            const container = document.getElementById('parametersContainer');
+            const section = document.getElementById('parametersSection');
+            
+            testParametersData.clear();
+            container.innerHTML = '';
+            
+            let hasParameters = false;
+            
+            for (const [testId, test] of selectedTests) {
+                try {
+                    const response = await fetch(`/get-test-parameters/${testId}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.parameters && data.parameters.length > 0) {
+                        hasParameters = true;
+                        testParametersData.set(testId, data.parameters);
+                        renderTestParameters(testId, test, data.parameters);
+                    }
+                } catch (error) {
+                    console.error(`Error loading parameters for ${testId}:`, error);
+                }
+            }
+            
+            section.style.display = hasParameters ? 'block' : 'none';
+        }
+
+        function renderTestParameters(testId, test, parameters) {
+            const container = document.getElementById('parametersContainer');
+            
+            const card = document.createElement('div');
+            card.className = 'test-parameters-card';
+            card.id = `params-${testId}`;
+            
+            let html = `
+                <div class="test-parameters-header">
+                    <span style="font-size: 1.5em;">${test.icon}</span>
+                    <h4>${test.name}</h4>
+                </div>
+                <div class="parameter-form">
+            `;
+            
+            parameters.forEach(param => {
+                html += renderParameter(testId, param);
+            });
+            
+            html += '</div>';
+            card.innerHTML = html;
+            container.appendChild(card);
+        }
+
+        function renderParameter(testId, param) {
+            // Sanitize testId and param.key to prevent XSS
+            const safeTestId = testId.replace(/[^a-zA-Z0-9_]/g, '');
+            const safeKey = param.key.replace(/[^a-zA-Z0-9_]/g, '');
+            const inputId = `param-${safeTestId}-${safeKey}`;
+            const required = param.required ? '<span class="param-required">*</span>' : '';
+            
+            let inputHtml = '';
+            
+            switch (param.type) {
+                case 'number':
+                    inputHtml = `
+                        <input type="number" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}
+                            step="any">
+                    `;
+                    break;
+                    
+                case 'string':
+                    inputHtml = `
+                        <input type="text" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}>
+                    `;
+                    break;
+                    
+                case 'date':
+                    inputHtml = `
+                        <input type="date" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}>
+                    `;
+                    break;
+                    
+                case 'datetime':
+                    inputHtml = `
+                        <input type="datetime-local" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}>
+                    `;
+                    break;
+                    
+                case 'boolean':
+                    inputHtml = `
+                        <div class="param-checkbox-container">
+                            <input type="checkbox" 
+                                id="${inputId}" 
+                                class="param-checkbox" 
+                                ${param.defaultValue ? 'checked' : ''}>
+                            <label for="${inputId}">فعال</label>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'select':
+                    inputHtml = `<select id="${inputId}" class="param-select" ${param.required ? 'required' : ''}>`;
+                    if (param.options) {
+                        param.options.forEach(option => {
+                            const selected = String(option.value) === String(param.defaultValue) ? 'selected' : '';
+                            inputHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
+                        });
+                    }
+                    inputHtml += '</select>';
+                    break;
+                    
+                default:
+                    inputHtml = `
+                        <input type="text" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}">
+                    `;
+            }
+            
+            return `
+                <div class="param-group">
+                    <label class="param-label" for="${inputId}">
+                        ${required}${param.displayName}
+                    </label>
+                    ${inputHtml}
+                </div>
+            `;
+        }
+
+        function collectTestParameters(testId) {
+            const params = {};
+            const testParams = testParametersData.get(testId);
+            
+            if (!testParams) {
+                return params;
+            }
+            
+            testParams.forEach(param => {
+                // Sanitize for consistency with renderParameter
+                const safeTestId = testId.replace(/[^a-zA-Z0-9_]/g, '');
+                const safeKey = param.key.replace(/[^a-zA-Z0-9_]/g, '');
+                const inputId = `param-${safeTestId}-${safeKey}`;
+                const element = document.getElementById(inputId);
+                
+                if (element) {
+                    if (param.type === 'boolean') {
+                        params[param.key] = element.checked;
+                    } else if (param.type === 'number') {
+                        const value = parseFloat(element.value);
+                        if (!isNaN(value)) {
+                            params[param.key] = value;
+                        } else if (param.defaultValue !== undefined && param.defaultValue !== null) {
+                            params[param.key] = param.defaultValue;
+                        }
+                        // If NaN and no default, don't include the parameter
+                    } else {
+                        const strValue = element.value || '';
+                        params[param.key] = strValue || param.defaultValue || '';
+                    }
+                } else if (param.defaultValue !== undefined && param.defaultValue !== null) {
+                    // If element not found, use default value if available
+                    params[param.key] = param.defaultValue;
+                }
+            });
+            
+            return params;
         }
 
         function goToStep1() {
@@ -1228,9 +1525,13 @@
                 try {
                     const startTime = Date.now();
                     
+                    // جمع‌آوری پارامترهای آزمون
+                    const params = collectTestParameters(testId);
+                    
                     const response = await fetch(`/run-test/${testId}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(params)
                     });
                     
                     const data = await response.json();
