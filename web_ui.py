@@ -524,9 +524,15 @@ def index():
                         subsystems[subsystem_id]['tests'].append(test)
                         break
     
+    # Calculate totals
+    total_tests = sum(len(category['tests']) for category in AUDIT_TESTS.values())
+    total_categories = len(AUDIT_TESTS)
+    
     return render_template('index.html', 
                          audit_tests=AUDIT_TESTS, 
-                         subsystems=subsystems)
+                         subsystems=subsystems,
+                         total_tests=total_tests,
+                         total_categories=total_categories)
 
 
 @app.route('/test-requirements/<test_id>')
