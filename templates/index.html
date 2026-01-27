@@ -912,7 +912,7 @@
 
         // Generate interpretation based on results
         function generateInterpretation(result) {
-            if (!result.count) return null;
+            if (result.count === undefined || result.count === null) return null;
 
             const testId = result.test_id;
             const count = result.count;
@@ -981,7 +981,8 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${testId}_${Date.now()}.xlsx`;
+                const dateStr = new Date().toISOString().slice(0,10);
+                a.download = `${testId}_${dateStr}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
