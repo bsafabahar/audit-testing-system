@@ -320,6 +320,55 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
+        /* View Toggle Buttons */
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .view-btn {
+            flex: 1;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            font-size: 0.9em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .view-btn span:first-child {
+            font-size: 1.3em;
+        }
+
+        .view-btn:hover {
+            background: #e7f3ff;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            font-weight: bold;
+        }
+
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
         .tree-category {
             margin-bottom: 10px;
         }
@@ -769,23 +818,60 @@
             <!-- Tree Menu (Right Sidebar) - Full Height -->
             <div class="tree-menu">
                 <h3>📂 لیست آزمون‌ها</h3>
-                {% for category_id, category in audit_tests.items() %}
-                <div class="tree-category">
-                    <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
-                        <span>{{ category.name }}</span>
-                        <span class="category-count">{{ category.tests|length }}</span>
-                    </div>
-                    <div class="test-list" id="list-{{ category_id }}">
-                        {% for test in category.tests %}
-                        <div class="test-item" id="item-{{ test.id }}">
-                            <button class="info-btn" onclick="event.stopPropagation(); showTestInfo('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')" title="اطلاعات بیشتر">ℹ️</button>
-                            <span class="test-icon" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.icon }}</span>
-                            <span class="test-name" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.name }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
+                
+                <!-- View Toggle Buttons -->
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="switchView('category')" id="viewBtnCategory">
+                        <span>📂</span>
+                        <span>دسته‌بندی موضوعی</span>
+                    </button>
+                    <button class="view-btn" onclick="switchView('subsystem')" id="viewBtnSubsystem">
+                        <span>🏦</span>
+                        <span>دسته‌بندی زیرسیستم‌ها</span>
+                    </button>
                 </div>
-                {% endfor %}
+
+                <!-- Category View -->
+                <div class="view-content active" id="categoryView">
+                    {% for category_id, category in audit_tests.items() %}
+                    <div class="tree-category">
+                        <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
+                            <span>{{ category.name }}</span>
+                            <span class="category-count">{{ category.tests|length }}</span>
+                        </div>
+                        <div class="test-list" id="list-{{ category_id }}">
+                            {% for test in category.tests %}
+                            <div class="test-item" id="item-{{ test.id }}">
+                                <button class="info-btn" onclick="event.stopPropagation(); showTestInfo('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')" title="اطلاعات بیشتر">ℹ️</button>
+                                <span class="test-icon" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.icon }}</span>
+                                <span class="test-name" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.name }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Subsystem View -->
+                <div class="view-content" id="subsystemView">
+                    {% for subsystem_id, subsystem in subsystems.items() %}
+                    <div class="tree-category">
+                        <div class="category-header" onclick="toggleCategory('sub-{{ subsystem_id }}')">
+                            <span>{{ subsystem.icon }} {{ subsystem.name }}</span>
+                            <span class="category-count">{{ subsystem.tests|length }}</span>
+                        </div>
+                        <div class="test-list" id="list-sub-{{ subsystem_id }}">
+                            {% for test in subsystem.tests %}
+                            <div class="test-item" id="item-sub-{{ subsystem_id }}-{{ test.id }}">
+                                <button class="info-btn" onclick="event.stopPropagation(); showTestInfo('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')" title="اطلاعات بیشتر">ℹ️</button>
+                                <span class="test-icon" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.icon }}</span>
+                                <span class="test-name" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.name }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
             <!-- Content Area - Settings & Results -->
@@ -881,6 +967,26 @@
             }
         }
 
+        // Switch between category and subsystem views
+        function switchView(viewType) {
+            const categoryView = document.getElementById('categoryView');
+            const subsystemView = document.getElementById('subsystemView');
+            const categoryBtn = document.getElementById('viewBtnCategory');
+            const subsystemBtn = document.getElementById('viewBtnSubsystem');
+
+            if (viewType === 'category') {
+                categoryView.classList.add('active');
+                subsystemView.classList.remove('active');
+                categoryBtn.classList.add('active');
+                subsystemBtn.classList.remove('active');
+            } else {
+                categoryView.classList.remove('active');
+                subsystemView.classList.add('active');
+                categoryBtn.classList.remove('active');
+                subsystemBtn.classList.add('active');
+            }
+        }
+
         // Show test info modal
         async function showTestInfo(testId, testName, testIcon) {
             const modal = document.getElementById('infoModal');
@@ -955,11 +1061,17 @@
 
         // Select/deselect test
         async function selectTest(testId, testName, testIcon) {
-            const item = document.getElementById('item-' + testId);
+            // Handle both category and subsystem view items
+            const categoryItem = document.getElementById('item-' + testId);
+            
+            // Get all subsystem view instances of this test
+            const allItems = document.querySelectorAll(`[id*="-${testId}"]`);
             
             if (selectedTests.has(testId)) {
                 selectedTests.delete(testId);
-                item.classList.remove('selected');
+                // Remove selected class from all instances
+                if (categoryItem) categoryItem.classList.remove('selected');
+                allItems.forEach(item => item.classList.remove('selected'));
             } else {
                 // دریافت نیازمندی‌های فایل برای این آزمون
                 try {
@@ -979,7 +1091,9 @@
                         requirements: null
                     });
                 }
-                item.classList.add('selected');
+                // Add selected class to all instances
+                if (categoryItem) categoryItem.classList.add('selected');
+                allItems.forEach(item => item.classList.add('selected'));
             }
             
             updateSelectedBadges();
