@@ -13,6 +13,7 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
+from decimal import Decimal
 
 
 def define() -> QueryDefinition:
@@ -84,7 +85,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
                 risk = 'خیلی بالا'
             elif debt_ratio > max_ratio:
                 risk = 'بالا'
-            elif debt_ratio > max_ratio * 0.5:
+            elif debt_ratio > max_ratio * Decimal('0.5'):
                 risk = 'متوسط'
             else:
                 risk = 'پایین'

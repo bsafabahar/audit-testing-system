@@ -17,6 +17,7 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
+from decimal import Decimal
 import statistics
 
 
@@ -311,7 +312,7 @@ def analyze_turnover_ratio(item_data, threshold):
 
 def determine_inventory_trend_pattern(trend_change, volatility, threshold):
     """تعیین نوع الگوی روند موجودی"""
-    if volatility >= threshold * 1.5:
+    if volatility >= threshold * Decimal('1.5'):
         return 'نوسان بسیار بالا'
     elif volatility >= threshold:
         return 'نوسان بالا'
@@ -325,9 +326,9 @@ def determine_inventory_trend_pattern(trend_change, volatility, threshold):
 
 def determine_seasonal_pattern(deviation, volatility, threshold):
     """تعیین نوع الگوی فصلی"""
-    if volatility >= threshold * 1.5:
+    if volatility >= threshold * Decimal('1.5'):
         return 'نوسان شدید فصلی'
-    elif abs(deviation) >= threshold * 1.5:
+    elif abs(deviation) >= threshold * Decimal('1.5'):
         if deviation > 0:
             return 'اوج فصلی شدید'
         else:
@@ -345,13 +346,13 @@ def determine_turnover_pattern(turnover, avg_turnover, threshold):
     """تعیین نوع الگوی گردش"""
     if turnover == 0:
         return 'بدون فروش'
-    elif turnover < threshold * 0.5:
+    elif turnover < threshold * Decimal('0.5'):
         return 'گردش بسیار پایین'
     elif turnover < threshold:
         return 'گردش پایین'
-    elif turnover < avg_turnover * 0.7:
+    elif turnover < avg_turnover * Decimal('0.7'):
         return 'کمتر از میانگین'
-    elif turnover > avg_turnover * 1.5:
+    elif turnover > avg_turnover * Decimal('1.5'):
         return 'بالاتر از میانگین'
     else:
         return 'عادی'

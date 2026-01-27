@@ -17,6 +17,7 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
+from decimal import Decimal
 import statistics
 
 
@@ -220,7 +221,7 @@ def analyze_cash_flow_volatility(sorted_periods, threshold):
         deviation = local_volatility
         
         # تعیین نوع الگو و ریسک
-        if local_volatility >= threshold * 1.5:
+        if local_volatility >= threshold * Decimal('1.5'):
             pattern_type = 'نوسان بسیار بالا'
             risk_indicator = 'بحرانی'
         elif local_volatility >= threshold:
@@ -264,11 +265,11 @@ def determine_cash_flow_pattern(net_flow, average, threshold):
         return 'بهبود به مثبت'
     elif abs(deviation) < threshold:
         return 'پایدار'
-    elif deviation > threshold * 1.5:
+    elif deviation > threshold * Decimal('1.5'):
         return 'رشد بسیار بالا'
     elif deviation > threshold:
         return 'رشد قابل توجه'
-    elif deviation < -threshold * 1.5:
+    elif deviation < -threshold * Decimal('1.5'):
         return 'کاهش شدید'
     else:
         return 'کاهش قابل توجه'
@@ -277,11 +278,11 @@ def determine_cash_flow_pattern(net_flow, average, threshold):
 def determine_cash_flow_risk(deviation, net_flow, threshold):
     """تعیین شاخص ریسک جریان نقدی"""
     if net_flow < 0:
-        if abs(deviation) >= threshold * 1.5:
+        if abs(deviation) >= threshold * Decimal('1.5'):
             return 'بحرانی'
         else:
             return 'بالا'
-    elif abs(deviation) >= threshold * 1.5:
+    elif abs(deviation) >= threshold * Decimal('1.5'):
         return 'بالا'
     elif abs(deviation) >= threshold:
         return 'متوسط'
