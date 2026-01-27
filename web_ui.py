@@ -60,9 +60,9 @@ AUDIT_TESTS = {
     'threshold': {
         'name': 'آزمون‌های آستانه',
         'tests': [
-            {'id': 'threshold_fifty_percent_test', 'name': 'آزمون ۵۰ درصد', 'icon': '📈'},
-            {'id': 'threshold_one_and_half_test', 'name': 'آزمون یک‌ونیم برابر', 'icon': '📏'},
-            {'id': 'threshold_double_test', 'name': 'آزمون دو برابر', 'icon': '✖️'},
+            {'id': 'variance_threshold_test', 'name': 'تحلیل آستانه واریانس', 'icon': '📈'},
+            {'id': 'statistical_upper_limit_test', 'name': 'حد بالای آماری', 'icon': '📏'},
+            {'id': 'high_value_transaction_test', 'name': 'تحلیل تراکنش‌های با ارزش بالا', 'icon': '✖️'},
         ]
     },
     'duplicate': {
@@ -83,12 +83,12 @@ AUDIT_TESTS = {
             {'id': 'statistical_profit_margin_test', 'name': 'نوسانات حاشیه سود', 'icon': '💹'},
         ]
     },
-    'cyclical': {
-        'name': 'آزمون‌های سینوسی',
+    'seasonal': {
+        'name': 'آزمون‌های الگوی فصلی',
         'tests': [
-            {'id': 'cyclical_cash_flow_test', 'name': 'الگوی سینوسی صندوق', 'icon': '💵'},
-            {'id': 'cyclical_inventory_test', 'name': 'الگوی سینوسی موجودی', 'icon': '📦'},
-            {'id': 'cyclical_sales_test', 'name': 'الگوی سینوسی فروش', 'icon': '🛒'},
+            {'id': 'seasonal_cash_flow_test', 'name': 'تحلیل فصلی جریان نقدی', 'icon': '💵'},
+            {'id': 'seasonal_inventory_pattern_test', 'name': 'تحلیل الگوی فصلی موجودی', 'icon': '📦'},
+            {'id': 'seasonal_sales_pattern_test', 'name': 'تحلیل الگوی فصلی فروش', 'icon': '🛒'},
         ]
     },
     'reconciliation': {
@@ -245,13 +245,13 @@ SUBSYSTEM_MAPPING = {
             'benford_first_digit_test', 'benford_first_two_digits_test', 
             'benford_last_two_digits_test', 'benford_difference_test',
             # Threshold - applicable to cash amounts
-            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            'variance_threshold_test', 'statistical_upper_limit_test', 'high_value_transaction_test',
             # Duplicate - check for duplicate transactions
             'duplicate_transaction_test', 'duplicate_check_test',
             # Statistical - cash flow analysis
             'statistical_zscore_test', 'statistical_iqr_test',
-            # Cyclical - cash flow patterns
-            'cyclical_cash_flow_test',
+            # Seasonal - cash flow patterns
+            'seasonal_cash_flow_test',
             # Reconciliation - bank reconciliation
             'reconciliation_bank_test',
             # Zero tests - applicable to cash amounts
@@ -289,14 +289,14 @@ SUBSYSTEM_MAPPING = {
             'benford_first_digit_test', 'benford_first_two_digits_test',
             'benford_last_two_digits_test', 'benford_difference_test',
             # Threshold
-            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            'variance_threshold_test', 'statistical_upper_limit_test', 'high_value_transaction_test',
             # Duplicate
             'duplicate_transaction_test', 'duplicate_names_test',
             # Statistical - price volatility
             'statistical_zscore_test', 'statistical_iqr_test',
             'statistical_price_volatility_test',
-            # Cyclical - inventory patterns
-            'cyclical_inventory_test',
+            # Seasonal - inventory patterns
+            'seasonal_inventory_pattern_test',
             # Reconciliation - inventory consumption
             'reconciliation_inventory_consumption_test',
             # Zero tests
@@ -332,7 +332,7 @@ SUBSYSTEM_MAPPING = {
             'benford_first_digit_test', 'benford_first_two_digits_test',
             'benford_last_two_digits_test', 'benford_difference_test',
             # Threshold
-            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            'variance_threshold_test', 'statistical_upper_limit_test', 'high_value_transaction_test',
             # Duplicate
             'duplicate_transaction_test', 'duplicate_names_test',
             # Statistical
@@ -376,14 +376,14 @@ SUBSYSTEM_MAPPING = {
             'benford_first_digit_test', 'benford_first_two_digits_test',
             'benford_last_two_digits_test', 'benford_difference_test',
             # Threshold
-            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            'variance_threshold_test', 'statistical_upper_limit_test', 'high_value_transaction_test',
             # Duplicate
             'duplicate_transaction_test', 'duplicate_names_test', 'duplicate_sales_pattern_test',
             # Statistical - profit margin
             'statistical_zscore_test', 'statistical_iqr_test',
             'statistical_profit_margin_test',
-            # Cyclical - sales patterns
-            'cyclical_sales_test',
+            # Seasonal - sales patterns
+            'seasonal_sales_pattern_test',
             # Reconciliation - customer confirmation
             'reconciliation_customer_confirmation_test',
             # Zero tests
@@ -425,7 +425,7 @@ SUBSYSTEM_MAPPING = {
             'benford_first_digit_test', 'benford_first_two_digits_test',
             'benford_last_two_digits_test', 'benford_difference_test',
             # Threshold
-            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            'variance_threshold_test', 'statistical_upper_limit_test', 'high_value_transaction_test',
             # Duplicate
             'duplicate_transaction_test', 'duplicate_names_test',
             # Statistical
@@ -466,7 +466,7 @@ SUBSYSTEM_MAPPING = {
             'benford_first_digit_test', 'benford_first_two_digits_test',
             'benford_last_two_digits_test', 'benford_difference_test',
             # Threshold
-            'threshold_fifty_percent_test', 'threshold_one_and_half_test', 'threshold_double_test',
+            'variance_threshold_test', 'statistical_upper_limit_test', 'high_value_transaction_test',
             # Duplicate
             'duplicate_transaction_test', 'duplicate_names_test',
             # Statistical - price volatility

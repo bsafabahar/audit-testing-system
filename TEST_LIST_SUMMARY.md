@@ -10,7 +10,7 @@ This repository contains **69 audit tests** organized into 23 categories.
 | Threshold | آزمون‌های آستانه | 3 |
 | Duplicate | آزمون‌های تکراری | 4 |
 | Statistical | آزمون‌های آماری | 4 |
-| Cyclical | آزمون‌های سینوسی | 3 |
+| Seasonal Pattern | آزمون‌های الگوی فصلی | 3 |
 | Reconciliation | آزمون‌های مطابقت | 4 |
 | Zero Tests | آزمون‌های صفرها | 3 |
 | Inventory | آزمون‌های موجودی | 4 |
@@ -67,8 +67,8 @@ Find suspicious duplicate entries in transactions, checks, names, etc.
 ### 4. Statistical Tests (4 tests)
 Use statistical methods (Z-Score, IQR) to identify outliers.
 
-### 5. Cyclical Tests (3 tests)
-Detect unusual cyclical patterns in cash flow, inventory, and sales.
+### 5. Seasonal Pattern Tests (3 tests)
+Detect unusual seasonal patterns in cash flow, inventory, and sales.
 
 ### 6. Reconciliation Tests (4 tests)
 Match data across different sources (bank, payroll, inventory, customers).

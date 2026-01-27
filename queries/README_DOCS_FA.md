@@ -69,9 +69,9 @@
 - `statistical_profit_margin_test.md` - حاشیه سود
 
 ### آزمون‌های آستانه (Threshold)
-- `threshold_double_test.md` - آزمون دو برابر
-- `threshold_fifty_percent_test.md` - آزمون پنجاه درصد
-- `threshold_one_and_half_test.md` - آزمون یک و نیم برابر
+- `variance_threshold_test.md` - تحلیل آستانه واریانس
+- `statistical_upper_limit_test.md` - حد بالای آماری
+- `high_value_transaction_test.md` - تحلیل تراکنش‌های با ارزش بالا
 
 ### آزمون‌های صفر و اعداد گرد (Zero/Round)
 - `zero_round_amounts_test.md` - مبالغ گرد
@@ -84,10 +84,10 @@
 - `duplicate_transaction_test.md` - تراکنش‌های تکراری
 - `duplicate_sales_pattern_test.md` - الگوی فروش تکراری
 
-### آزمون‌های چرخه‌ای (Cyclical)
-- `cyclical_cash_flow_test.md` - جریان نقد چرخه‌ای
-- `cyclical_inventory_test.md` - موجودی چرخه‌ای
-- `cyclical_sales_test.md` - فروش چرخه‌ای
+### آزمون‌های الگوی فصلی (Seasonal Pattern)
+- `seasonal_cash_flow_test.md` - تحلیل فصلی جریان نقدی
+- `seasonal_inventory_pattern_test.md` - تحلیل الگوی فصلی موجودی
+- `seasonal_sales_pattern_test.md` - تحلیل الگوی فصلی فروش
 
 ### آزمون‌های کیفیت داده (Data Quality)
 - `data_quality_data_type_test.md` - نوع داده
