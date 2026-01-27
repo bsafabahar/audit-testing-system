@@ -660,6 +660,10 @@ def run_test(test_id):
         except:
             params = {}
         
+        # تنظیم پارامترها برای query_runner
+        import query_runner
+        query_runner.INPUT_PARAMETERS = params
+        
         # اجرای آزمون
         session = get_db()
         
@@ -680,6 +684,52 @@ def run_test(test_id):
         return jsonify({
             'error': f'خطا در اجرای آزمون: {str(e)}',
             'traceback': traceback.format_exc()
+        }), 500
+
+
+@app.route('/get-test-parameters/<test_id>', methods=['GET'])
+def get_test_parameters(test_id):
+    """دریافت پارامترهای یک آزمون"""
+    try:
+        # بررسی امنیت test_id - جلوگیری از path traversal و محدود کردن به فرمت مجاز
+        if not test_id.replace('_', '').isalnum() or '..' in test_id or '/' in test_id or '\\' in test_id:
+            return jsonify({
+                'error': 'Invalid test ID format'
+            }), 400
+        
+        # بررسی اینکه test_id در لیست آزمون‌های مجاز باشد
+        valid_test_ids = set()
+        for category in AUDIT_TESTS.values():
+            for test in category['tests']:
+                valid_test_ids.add(test['id'])
+        
+        if test_id not in valid_test_ids:
+            return jsonify({
+                'error': 'Test ID not found'
+            }), 404
+        
+        # بارگذاری ماژول آزمون
+        module_path = f'queries.{test_id}'
+        test_module = importlib.import_module(module_path)
+        
+        # دریافت تعریف پارامترها
+        if hasattr(test_module, 'define'):
+            definitions = test_module.define()
+            parameters = definitions.get('parameters', [])
+            
+            return jsonify({
+                'success': True,
+                'parameters': parameters
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'parameters': []
+            })
+    
+    except Exception as e:
+        return jsonify({
+            'error': f'خطا در دریافت پارامترها: {str(e)}'
         }), 500
 
 

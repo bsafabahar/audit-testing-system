@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سیستم آزمون‌های حسابرسی</title>
+    <!-- Vazir Persian Font from official CDN -->
+    <!-- This is the official repository for Vazir font: https://github.com/rastikerdar/vazir-font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css" rel="stylesheet" type="text/css" />
     <style>
         * {
             margin: 0;
@@ -780,7 +783,8 @@
                 try {
                     const response = await fetch(`/run-test/${testId}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(params)
                     });
 
                     const result = await response.json();
