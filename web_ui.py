@@ -60,9 +60,9 @@ AUDIT_TESTS = {
     'threshold': {
         'name': 'آزمون‌های آستانه',
         'tests': [
-            {'id': 'threshold_fifty_percent_test', 'name': 'آزمون ۵۰ درصد', 'icon': '📈'},
-            {'id': 'threshold_one_and_half_test', 'name': 'آزمون یک‌ونیم برابر', 'icon': '📏'},
-            {'id': 'threshold_double_test', 'name': 'آزمون دو برابر', 'icon': '✖️'},
+            {'id': 'variance_threshold_test', 'name': 'تحلیل آستانه واریانس', 'icon': '📈'},
+            {'id': 'statistical_upper_limit_test', 'name': 'حد بالای آماری', 'icon': '📏'},
+            {'id': 'high_value_transaction_test', 'name': 'تحلیل تراکنش‌های با ارزش بالا', 'icon': '✖️'},
         ]
     },
     'duplicate': {
@@ -83,12 +83,12 @@ AUDIT_TESTS = {
             {'id': 'statistical_profit_margin_test', 'name': 'نوسانات حاشیه سود', 'icon': '💹'},
         ]
     },
-    'cyclical': {
-        'name': 'آزمون‌های سینوسی',
+    'seasonal': {
+        'name': 'آزمون‌های الگوی فصلی',
         'tests': [
-            {'id': 'cyclical_cash_flow_test', 'name': 'الگوی سینوسی صندوق', 'icon': '💵'},
-            {'id': 'cyclical_inventory_test', 'name': 'الگوی سینوسی موجودی', 'icon': '📦'},
-            {'id': 'cyclical_sales_test', 'name': 'الگوی سینوسی فروش', 'icon': '🛒'},
+            {'id': 'seasonal_cash_flow_test', 'name': 'تحلیل فصلی جریان نقدی', 'icon': '💵'},
+            {'id': 'seasonal_inventory_pattern_test', 'name': 'تحلیل الگوی فصلی موجودی', 'icon': '📦'},
+            {'id': 'seasonal_sales_pattern_test', 'name': 'تحلیل الگوی فصلی فروش', 'icon': '🛒'},
         ]
     },
     'reconciliation': {

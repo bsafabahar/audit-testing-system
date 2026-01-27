@@ -58,17 +58,17 @@ TEST_DATA_REQUIREMENTS = {
     },
     
     # آزمون‌های آستانه
-    'threshold_fifty_percent_test': {
+    'variance_threshold_test': {
         'required_files': ['transactions'],
-        'description': 'تراکنش‌های نزدیک به ۵۰ درصد آستانه‌های مالی'
+        'description': 'تحلیل آستانه واریانس - تراکنش‌های با انحراف قابل تنظیم از میانگین'
     },
-    'threshold_one_and_half_test': {
+    'statistical_upper_limit_test': {
         'required_files': ['transactions'],
-        'description': 'تراکنش‌های نزدیک به یک‌ونیم برابر آستانه'
+        'description': 'حد بالای آماری - تراکنش‌های بالاتر از حد آماری'
     },
-    'threshold_double_test': {
+    'high_value_transaction_test': {
         'required_files': ['transactions'],
-        'description': 'تراکنش‌های نزدیک به دو برابر آستانه'
+        'description': 'تحلیل تراکنش‌های با ارزش بالا - شناسایی تراکنش‌های غیرمعمول'
     },
     
     # آزمون‌های تکراری
@@ -107,18 +107,18 @@ TEST_DATA_REQUIREMENTS = {
         'description': 'نوسانات حاشیه سود'
     },
     
-    # آزمون‌های سینوسی
-    'cyclical_cash_flow_test': {
+    # آزمون‌های الگوی فصلی
+    'seasonal_cash_flow_test': {
         'required_files': ['transactions'],
-        'description': 'الگوی سینوسی جریان نقدی'
+        'description': 'تحلیل فصلی جریان نقدی - شناسایی الگوهای فصلی در نقدینگی'
     },
-    'cyclical_inventory_test': {
+    'seasonal_inventory_pattern_test': {
         'required_files': ['inventory'],
-        'description': 'الگوی سینوسی موجودی'
+        'description': 'تحلیل الگوی فصلی موجودی - شناسایی نوسانات فصلی موجودی'
     },
-    'cyclical_sales_test': {
+    'seasonal_sales_pattern_test': {
         'required_files': ['sales'],
-        'description': 'الگوی سینوسی فروش'
+        'description': 'تحلیل الگوی فصلی فروش - شناسایی الگوهای فصلی در فروش'
     },
     
     # آزمون‌های تطبیق (نیاز به چند فایل)
