@@ -66,8 +66,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     # محاسبه چارک‌ها
     amounts_sorted = sorted(amounts)
-    q1 = statistics.quantiles(amounts_sorted, n=4)[0]
-    q3 = statistics.quantiles(amounts_sorted, n=4)[2]
+    q1 = float(statistics.quantiles(amounts_sorted, n=4)[0])
+    q3 = float(statistics.quantiles(amounts_sorted, n=4)[2])
     iqr = q3 - q1
     
     lower_bound = q1 - (iqr_multiplier * iqr)
@@ -76,13 +76,14 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     # یافتن پرت‌ها
     data = []
     for amount in set(amounts):
-        if amount < lower_bound or amount > upper_bound:
-            outlier_type = 'پایین‌تر از حد' if amount < lower_bound else 'بالاتر از حد'
+        amount_float = float(amount)
+        if amount_float < lower_bound or amount_float > upper_bound:
+            outlier_type = 'پایین‌تر از حد' if amount_float < lower_bound else 'بالاتر از حد'
             
             for t in transaction_map[amount]:
                 row = {
                     'TransactionID': str(t.TransactionID) if hasattr(t, 'TransactionID') else '',
-                    'Amount': round(amount, 2),
+                    'Amount': round(amount_float, 2),
                     'Q1': round(q1, 2),
                     'Q3': round(q3, 2),
                     'IQR': round(iqr, 2),

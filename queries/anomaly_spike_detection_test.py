@@ -65,7 +65,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     # محاسبه میانگین
     all_amounts = [amount for _, amount in sorted_periods]
-    avg_amount = statistics.mean(all_amounts)
+    avg_amount = float(statistics.mean(all_amounts))
     
     # تشخیص رشد ناگهانی
     data = []
@@ -74,10 +74,12 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         current_period, current_amount = sorted_periods[i]
         prev_period, prev_amount = sorted_periods[i - 1]
         
-        change = current_amount - prev_amount
+        current_float = float(current_amount)
+        prev_float = float(prev_amount)
+        change = current_float - prev_float
         
-        if prev_amount > 0:
-            change_percent = (change / prev_amount) * 100
+        if prev_float > 0:
+            change_percent = (change / prev_float) * 100
         else:
             change_percent = 0
         

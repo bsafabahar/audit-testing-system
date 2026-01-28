@@ -67,7 +67,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     seasonal_averages = {}
     for month, amounts in month_amounts.items():
         if amounts:
-            seasonal_averages[month] = statistics.mean(amounts)
+            seasonal_averages[month] = float(statistics.mean(amounts))
     
     # تعیین فصل
     def get_season(month):
@@ -89,7 +89,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         
         if month in seasonal_averages:
             seasonal_avg = seasonal_averages[month]
-            variance = amount - seasonal_avg
+            variance = float(amount) - seasonal_avg
             variance_percent = (variance / seasonal_avg * 100) if seasonal_avg > 0 else 0
             
             if abs(variance_percent) >= variance_threshold:

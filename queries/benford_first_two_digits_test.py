@@ -13,7 +13,6 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import Counter
-from decimal import Decimal
 import math
 
 
@@ -102,7 +101,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             deviation = actual_percent - expected_percent
             
             # مشکوک اگر انحراف بیش از 50% باشد
-            is_suspicious = abs(deviation) > (expected_percent * Decimal('0.5'))
+            is_suspicious = abs(deviation) > (expected_percent * 0.5)
             
             row = {
                 'TwoDigits': digits,

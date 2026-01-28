@@ -61,8 +61,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         return []
     
     # محاسبه میانگین و انحراف معیار
-    mean = statistics.mean(amounts)
-    stdev = statistics.stdev(amounts)
+    mean = float(statistics.mean(amounts))
+    stdev = float(statistics.stdev(amounts))
     
     if stdev == 0:
         return []
@@ -70,17 +70,18 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     # یافتن اقلام با Z-Score بالا
     data = []
     for amount in amounts:
-        z_score = (amount - mean) / stdev
+        amount_float = float(amount)
+        z_score = (amount_float - mean) / stdev
         
         if abs(z_score) >= z_threshold:
             t = transaction_map[amount]
             row = {
                 'TransactionID': str(t.TransactionID) if hasattr(t, 'TransactionID') else '',
-                'Amount': round(amount, 2),
+                'Amount': round(amount_float, 2),
                 'ZScore': round(z_score, 4),
                 'Mean': round(mean, 2),
                 'StdDev': round(stdev, 2),
-                'DeviationFromMean': round(amount - mean, 2)
+                'DeviationFromMean': round(amount_float - mean, 2)
             }
             data.append(row)
     

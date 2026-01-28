@@ -17,7 +17,6 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
-from decimal import Decimal
 import statistics
 
 
@@ -135,14 +134,14 @@ def analyze_inventory_level_trend(item_data, threshold):
         # محاسبه آمار
         ending_values = [inv['ending'] for inv in inventory_levels]
         if len(ending_values) > 1:
-            avg_inventory = statistics.mean(ending_values)
-            stdev_inventory = statistics.stdev(ending_values)
+            avg_inventory = float(statistics.mean(ending_values))
+            stdev_inventory = float(statistics.stdev(ending_values))
             volatility = (stdev_inventory / avg_inventory * 100) if avg_inventory > 0 else 0
             
             # تحلیل روند
             if len(ending_values) >= 3:
-                recent_avg = statistics.mean(ending_values[-3:])
-                overall_avg = statistics.mean(ending_values[:-3]) if len(ending_values) > 3 else avg_inventory
+                recent_avg = float(statistics.mean(ending_values[-3:]))
+                overall_avg = float(statistics.mean(ending_values[:-3])) if len(ending_values) > 3 else avg_inventory
                 trend_change = ((recent_avg - overall_avg) / overall_avg * 100) if overall_avg > 0 else 0
                 
                 pattern_type = determine_inventory_trend_pattern(trend_change, volatility, threshold)
@@ -207,13 +206,13 @@ def analyze_seasonal_fluctuation(item_data, seasonal_period, threshold):
         
         monthly_averages = {}
         for month_index, values in monthly_inventories.items():
-            monthly_averages[month_index] = statistics.mean(values) if values else 0
+            monthly_averages[month_index] = float(statistics.mean(values)) if values else 0
         
         # محاسبه نوسان کلی
         ending_values = [inv['ending'] for inv in inventory_levels]
         if len(ending_values) > 1:
-            avg_inventory = statistics.mean(ending_values)
-            stdev_inventory = statistics.stdev(ending_values)
+            avg_inventory = float(statistics.mean(ending_values))
+            stdev_inventory = float(statistics.stdev(ending_values))
             volatility = (stdev_inventory / avg_inventory * 100) if avg_inventory > 0 else 0
         else:
             volatility = 0
@@ -283,10 +282,10 @@ def analyze_turnover_ratio(item_data, threshold):
         turnover_values = [inv['turnover'] for inv in inventory_levels if inv['turnover'] > 0]
         
         if len(ending_values) > 1:
-            avg_inventory = statistics.mean(ending_values)
-            stdev_inventory = statistics.stdev(ending_values)
+            avg_inventory = float(statistics.mean(ending_values))
+            stdev_inventory = float(statistics.stdev(ending_values))
             volatility = (stdev_inventory / avg_inventory * 100) if avg_inventory > 0 else 0
-            avg_turnover = statistics.mean(turnover_values) if turnover_values else 0
+            avg_turnover = float(statistics.mean(turnover_values)) if turnover_values else 0
         else:
             volatility = 0
             avg_turnover = 0
@@ -315,7 +314,7 @@ def analyze_turnover_ratio(item_data, threshold):
 
 def determine_inventory_trend_pattern(trend_change, volatility, threshold):
     """تعیین نوع الگوی روند موجودی"""
-    if volatility >= threshold * Decimal('1.5'):
+    if volatility >= threshold * 1.5:
         return 'نوسان بسیار بالا'
     elif volatility >= threshold:
         return 'نوسان بالا'
@@ -329,9 +328,9 @@ def determine_inventory_trend_pattern(trend_change, volatility, threshold):
 
 def determine_seasonal_pattern(deviation, volatility, threshold):
     """تعیین نوع الگوی فصلی"""
-    if volatility >= threshold * Decimal('1.5'):
+    if volatility >= threshold * 1.5:
         return 'نوسان شدید فصلی'
-    elif abs(deviation) >= threshold * Decimal('1.5'):
+    elif abs(deviation) >= threshold * 1.5:
         if deviation > 0:
             return 'اوج فصلی شدید'
         else:
@@ -349,13 +348,13 @@ def determine_turnover_pattern(turnover, avg_turnover, threshold):
     """تعیین نوع الگوی گردش"""
     if turnover == 0:
         return 'بدون فروش'
-    elif turnover < threshold * Decimal('0.5'):
+    elif turnover < threshold * 0.5:
         return 'گردش بسیار پایین'
     elif turnover < threshold:
         return 'گردش پایین'
-    elif turnover < avg_turnover * Decimal('0.7'):
+    elif turnover < avg_turnover * 0.7:
         return 'کمتر از میانگین'
-    elif turnover > avg_turnover * Decimal('1.5'):
+    elif turnover > avg_turnover * 1.5:
         return 'بالاتر از میانگین'
     else:
         return 'عادی'

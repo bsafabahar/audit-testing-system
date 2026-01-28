@@ -13,7 +13,6 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
-from decimal import Decimal
 
 
 def define() -> QueryDefinition:
@@ -95,7 +94,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
                     indicator = 'مشکوک - تاخیر و اختلاف'
                 elif days_late > day_threshold * 2:
                     indicator = 'بسیار مشکوک - تاخیر زیاد'
-                elif difference > invoice_info['amount'] * Decimal('0.1'):
+                elif difference > float(invoice_info['amount']) * 0.1:
                     indicator = 'مشکوک - اختلاف مبلغ'
                 
                 if indicator != 'عادی':

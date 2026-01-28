@@ -62,12 +62,12 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     data = []
     for item_id, prices in item_prices.items():
         if len(prices) >= min_trans:
-            min_price = min(prices)
-            max_price = max(prices)
-            avg_price = statistics.mean(prices)
+            min_price = float(min(prices))
+            max_price = float(max(prices))
+            avg_price = float(statistics.mean(prices))
             
             if len(prices) > 1:
-                stdev = statistics.stdev(prices)
+                stdev = float(statistics.stdev(prices))
                 cv = (stdev / avg_price) * 100 if avg_price > 0 else 0
                 
                 if cv >= cv_threshold:

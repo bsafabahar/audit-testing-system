@@ -446,21 +446,27 @@
             font-size: 0.95em;
         }
 
-        /* Run Button (Bottom Fixed) */
-        .run-button-container {
-            background: white;
-            border-top: 3px solid #667eea;
-            padding: 20px;
+        /* Action Buttons (Above Results) */
+        .action-buttons-container {
+            background: #f8f9fa;
+            border-top: 2px solid #e0e0e0;
+            border-bottom: 3px solid #667eea;
+            padding: 15px 20px;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
         }
 
         .btn-run {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
             border: none;
-            padding: 15px 50px;
-            border-radius: 30px;
-            font-size: 1.3em;
+            padding: 12px 40px;
+            border-radius: 25px;
+            font-size: 1.1em;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
@@ -468,7 +474,7 @@
         }
 
         .btn-run:hover:not(:disabled) {
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
         }
 
@@ -483,6 +489,7 @@
         }
 
         .btn-secondary {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
             background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
             color: white;
             border: none;
@@ -492,7 +499,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-            margin: 0 10px;
         }
 
         .btn-secondary:hover {
@@ -804,6 +810,102 @@
                 height: auto;
             }
         }
+
+        /* Parameter Forms */
+        .parameters-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 2px solid #dee2e6;
+        }
+
+        .parameters-section h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .parameter-form {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .param-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .param-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 1.05em;
+        }
+
+        .param-required {
+            color: #dc3545;
+            margin-right: 5px;
+        }
+
+        .param-input,
+        .param-select {
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Vazir', 'Tahoma', sans-serif;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .param-input:focus,
+        .param-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .param-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .param-checkbox {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .test-parameters-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .test-parameters-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .test-parameters-header h4 {
+            color: #495057;
+            font-size: 1.2em;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -902,31 +1004,40 @@
                             </div>
                             <div class="file-status" id="fileStatus"></div>
                         </div>
+
+                        <!-- Parameters Section -->
+                        <div class="parameters-section" id="parametersSection" style="display: none;">
+                            <h3>
+                                <span>⚙️</span>
+                                <span>تنظیمات پارامترهای آزمون</span>
+                            </h3>
+                            <div id="parametersContainer"></div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Run Buttons (Above Results) -->
+                <div class="action-buttons-container">
+                    <button class="btn-secondary" onclick="resetAll()">🔄 ریست همه</button>
+                    <button class="btn-run" id="btnRun" onclick="runTests()" disabled>
+                        ▶️ اجرای آزمون
+                    </button>
                 </div>
 
                 <!-- Results Area -->
                 <div class="bottom-content">
                     <div class="results-area">
-                        <h3>📊 نتایج آزمون‌ها</h3>
+                        <h3>📊 نتایج آزمون</h3>
                         <div id="resultsContainer">
                             <div class="no-selection">
                                 <div class="no-selection-icon">📈</div>
                                 <p>نتایج اینجا نمایش داده می‌شود</p>
-                                <p style="font-size: 0.9em; margin-top: 10px;">پس از انتخاب آزمون و آپلود فایل، دکمه "اجرای آزمون‌ها" را فشار دهید</p>
+                                <p style="font-size: 0.9em; margin-top: 10px;">پس از انتخاب آزمون و آپلود فایل، دکمه "اجرای آزمون" را فشار دهید</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Run Button (Bottom Fixed) -->
-        <div class="run-button-container">
-            <button class="btn-secondary" onclick="resetAll()">🔄 ریست همه</button>
-            <button class="btn-run" id="btnRun" onclick="runTests()" disabled>
-                ▶️ اجرای آزمون‌ها
-            </button>
         </div>
     </div>
 
@@ -1059,7 +1170,7 @@
             }
         });
 
-        // Select/deselect test
+        // Select/deselect test (Single Selection Only)
         async function selectTest(testId, testName, testIcon) {
             // Handle both category and subsystem view items
             const categoryItem = document.getElementById('item-' + testId);
@@ -1067,12 +1178,20 @@
             // Get all subsystem view instances of this test
             const allItems = document.querySelectorAll(`[id*="-${testId}"]`);
             
+            // اگر همین آزمون قبلاً انتخاب شده بود، انتخاب را لغو می‌کنیم
             if (selectedTests.has(testId)) {
-                selectedTests.delete(testId);
-                // Remove selected class from all instances
-                if (categoryItem) categoryItem.classList.remove('selected');
-                allItems.forEach(item => item.classList.remove('selected'));
+                selectedTests.clear();
+                // Remove selected class from all items
+                document.querySelectorAll('.tree-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
             } else {
+                // حذف انتخاب آزمون قبلی
+                selectedTests.clear();
+                document.querySelectorAll('.tree-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                
                 // دریافت نیازمندی‌های فایل برای این آزمون
                 try {
                     const response = await fetch(`/test-requirements/${testId}`);
@@ -1110,7 +1229,7 @@
                     <div class="no-selection">
                         <div class="no-selection-icon">📋</div>
                         <p>هیچ آزمونی انتخاب نشده است</p>
-                        <p style="font-size: 0.9em; margin-top: 10px;">لطفاً از منوی سمت راست یک یا چند آزمون را انتخاب کنید</p>
+                        <p style="font-size: 0.9em; margin-top: 10px;">لطفاً از منوی سمت راست یک آزمون را انتخاب کنید</p>
                     </div>
                 `;
                 uploadSection.style.display = 'none';
@@ -1187,6 +1306,9 @@
             }
             
             uploadSection.style.display = 'block';
+            
+            // بارگذاری پارامترهای آزمون‌ها
+            await loadTestParameters();
         }
 
         // Upload files
@@ -1244,6 +1366,177 @@
             updateRunButton();
         }
 
+        // Global object to store test parameters
+        let testParametersData = new Map();
+
+        async function loadTestParameters() {
+            const container = document.getElementById('parametersContainer');
+            const section = document.getElementById('parametersSection');
+
+            testParametersData.clear();
+            container.innerHTML = '';
+
+            let hasParameters = false;
+
+            for (const [testId, test] of selectedTests) {
+                try {
+                    const response = await fetch(`/get-test-parameters/${testId}`);
+                    const data = await response.json();
+
+                    if (data.success && data.parameters && data.parameters.length > 0) {
+                        hasParameters = true;
+                        testParametersData.set(testId, data.parameters);
+                        renderTestParameters(testId, test, data.parameters);
+                    }
+                } catch (error) {
+                    console.error(`Error loading parameters for ${testId}:`, error);
+                }
+            }
+
+            section.style.display = hasParameters ? 'block' : 'none';
+        }
+
+        function renderTestParameters(testId, test, parameters) {
+            const container = document.getElementById('parametersContainer');
+
+            const card = document.createElement('div');
+            card.className = 'test-parameters-card';
+            card.id = `params-${testId}`;
+
+            let html = `
+                <div class="test-parameters-header">
+                    <span style="font-size: 1.5em;">${test.icon}</span>
+                    <h4>${test.name}</h4>
+                </div>
+                <div class="parameter-form">
+            `;
+
+            parameters.forEach(param => {
+                html += renderParameter(testId, param);
+            });
+
+            html += '</div>';
+            card.innerHTML = html;
+            container.appendChild(card);
+        }
+
+        function renderParameter(testId, param) {
+            const inputId = `param-${testId}-${param.key}`;
+            const required = param.required ? '<span class="param-required">*</span>' : '';
+
+            let inputHtml = '';
+
+            switch (param.type) {
+                case 'number':
+                    inputHtml = `
+                        <input type="number" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}
+                            step="any">
+                    `;
+                    break;
+
+                case 'string':
+                    inputHtml = `
+                        <input type="text" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}>
+                    `;
+                    break;
+
+                case 'date':
+                    inputHtml = `
+                        <input type="date" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}>
+                    `;
+                    break;
+
+                case 'datetime':
+                    inputHtml = `
+                        <input type="datetime-local" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}"
+                            ${param.required ? 'required' : ''}>
+                    `;
+                    break;
+
+                case 'boolean':
+                    inputHtml = `
+                        <div class="param-checkbox-container">
+                            <input type="checkbox" 
+                                id="${inputId}" 
+                                class="param-checkbox" 
+                                ${param.defaultValue ? 'checked' : ''}>
+                            <label for="${inputId}">فعال</label>
+                        </div>
+                    `;
+                    break;
+
+                case 'select':
+                    inputHtml = `<select id="${inputId}" class="param-select" ${param.required ? 'required' : ''}>`;
+                    if (param.options) {
+                        param.options.forEach(option => {
+                            const selected = option.value == param.defaultValue ? 'selected' : '';
+                            inputHtml += `<option value="${option.value}" ${selected}>${option.label}</option>`;
+                        });
+                    }
+                    inputHtml += '</select>';
+                    break;
+
+                default:
+                    inputHtml = `
+                        <input type="text" 
+                            id="${inputId}" 
+                            class="param-input" 
+                            value="${param.defaultValue || ''}">
+                    `;
+            }
+
+            return `
+                <div class="param-group">
+                    <label class="param-label" for="${inputId}">
+                        ${required}${param.displayName}
+                    </label>
+                    ${inputHtml}
+                </div>
+            `;
+        }
+
+        function collectTestParameters(testId) {
+            const params = {};
+            const testParams = testParametersData.get(testId);
+
+            if (!testParams) {
+                return params;
+            }
+
+            testParams.forEach(param => {
+                const inputId = `param-${testId}-${param.key}`;
+                const element = document.getElementById(inputId);
+
+                if (element) {
+                    if (param.type === 'boolean') {
+                        params[param.key] = element.checked;
+                    } else if (param.type === 'number') {
+                        const value = parseFloat(element.value);
+                        params[param.key] = isNaN(value) ? param.defaultValue : value;
+                    } else {
+                        params[param.key] = element.value || param.defaultValue;
+                    }
+                }
+            });
+
+            return params;
+        }
+
         // Update run button state
         function updateRunButton() {
             const btnRun = document.getElementById('btnRun');
@@ -1262,7 +1555,7 @@
             resultsContainer.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p class="loading-text">در حال اجرای آزمون‌ها... لطفاً صبر کنید</p>
+                    <p class="loading-text">در حال اجرای آزمون... لطفاً صبر کنید</p>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
                     </div>
@@ -1276,10 +1569,13 @@
                 const test = selectedTests.get(testId);
                 
                 try {
+                    // جمع‌آوری پارامترهای آزمون
+                    const params = collectTestParameters(testId);
+                    
                     const response = await fetch(`/run-test/${testId}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({})
+                        body: JSON.stringify(params)
                     });
 
                     const result = await response.json();
@@ -1497,6 +1793,7 @@
                 selectedTests.clear();
                 uploadedFiles.clear();
                 testResults = [];
+                testParametersData.clear();
                 
                 // Clear selections
                 document.querySelectorAll('.test-item.selected').forEach(item => {
@@ -1506,6 +1803,8 @@
                 // Reset UI
                 updateSelectedBadges();
                 document.getElementById('fileStatus').innerHTML = '';
+                document.getElementById('parametersSection').style.display = 'none';
+                document.getElementById('parametersContainer').innerHTML = '';
                 document.getElementById('resultsContainer').innerHTML = `
                     <div class="no-selection">
                         <div class="no-selection-icon">📈</div>

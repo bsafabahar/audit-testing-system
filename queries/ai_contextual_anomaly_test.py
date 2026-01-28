@@ -99,15 +99,15 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             continue
         
         # محاسبه میانگین و انحراف معیار
-        mean_amount = statistics.mean(amounts)
-        stdev_amount = statistics.stdev(amounts)
+        mean_amount = float(statistics.mean(amounts))
+        stdev_amount = float(statistics.stdev(amounts))
         
         if stdev_amount == 0:
             continue
         
         # شناسایی تراکنش‌های ناهنجار
         for trans_info in trans_list:
-            amount = trans_info['amount']
+            amount = float(trans_info['amount'])
             deviation = amount - mean_amount
             sigma_count = abs(deviation) / stdev_amount
             

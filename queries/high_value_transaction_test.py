@@ -97,16 +97,16 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     # محاسبه آستانه بر اساس روش انتخابی
     threshold = 0
     if threshold_method == 'multiplier':
-        mean = statistics.mean(amounts)
+        mean = float(statistics.mean(amounts))
         threshold = mean * multiplier_value
     elif threshold_method == 'percentile':
         amounts_sorted = sorted(amounts)
         # استفاده از روش ساده برای محاسبه صدک
         index = int(len(amounts_sorted) * (percentile_value / 100.0))
-        threshold = amounts_sorted[min(index, len(amounts_sorted) - 1)]
+        threshold = float(amounts_sorted[min(index, len(amounts_sorted) - 1)])
     elif threshold_method == 'stdev':
-        mean = statistics.mean(amounts)
-        stdev = statistics.stdev(amounts) if len(amounts) > 1 else 0
+        mean = float(statistics.mean(amounts))
+        stdev = float(statistics.stdev(amounts)) if len(amounts) > 1 else 0
         threshold = mean + (stdev * stdev_value)
     
     # یافتن تراکنش‌های بالاتر از آستانه
@@ -119,7 +119,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             amount = t.Credit
         
         if amount > threshold:
-            excess_factor = amount / threshold
+            amount_float = float(amount)
+            excess_factor = amount_float / threshold
             
             # تعیین سطح ریسک بر اساس ضریب مازاد
             if excess_factor >= 3:

@@ -79,11 +79,11 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     
     # محاسبه آستانه بر اساس روش انتخابی
     if limit_method == 'mean-based':
-        mean = statistics.mean(amounts)
+        mean = float(statistics.mean(amounts))
         threshold = mean * multiplier
     else:  # stdev-based
-        mean = statistics.mean(amounts)
-        stdev = statistics.stdev(amounts) if len(amounts) > 1 else 0
+        mean = float(statistics.mean(amounts))
+        stdev = float(statistics.stdev(amounts)) if len(amounts) > 1 else 0
         threshold = mean + (stdev * multiplier)
     
     # یافتن موارد بالاتر از آستانه
@@ -91,9 +91,9 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
     for t in results:
         amount = 0
         if column_name == 'Debit' and t.Debit:
-            amount = t.Debit
+            amount = float(t.Debit)
         elif column_name == 'Credit' and t.Credit:
-            amount = t.Credit
+            amount = float(t.Credit)
         
         if amount > threshold:
             excess_amount = amount - threshold
@@ -118,7 +118,7 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
                 'DocumentDate': t.DocumentDate.strftime('%Y-%m-%d') if t.DocumentDate else '',
                 'DocumentNumber': t.DocumentNumber,
                 'AccountCode': t.AccountCode,
-                'Amount': float(amount),
+                'Amount': round(amount, 2),
                 'Threshold': round(threshold, 2),
                 'ExcessAmount': round(excess_amount, 2),
                 'ExcessPercent': round(excess_percent, 2),

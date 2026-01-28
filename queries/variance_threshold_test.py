@@ -82,8 +82,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         return []
     
     # محاسبه آمار
-    mean = statistics.mean(amounts)
-    stdev = statistics.stdev(amounts) if len(amounts) > 1 else 0
+    mean = float(statistics.mean(amounts))
+    stdev = float(statistics.stdev(amounts)) if len(amounts) > 1 else 0
     
     # محاسبه آستانه‌ها بر اساس واریانس
     threshold_factor = 1 + (variance_threshold / 100)
@@ -103,26 +103,26 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
             continue
         
         # محاسبه Z-Score
-        z_score = (amount - mean) / stdev if stdev > 0 else 0
+        z_score = (float(amount) - mean) / stdev if stdev > 0 else 0
         
         # بررسی شرایط انحراف
         is_anomaly = False
         if deviation_type == 'both':
-            is_anomaly = amount > threshold_upper or amount < threshold_lower
+            is_anomaly = float(amount) > threshold_upper or float(amount) < threshold_lower
         elif deviation_type == 'above':
-            is_anomaly = amount > threshold_upper
+            is_anomaly = float(amount) > threshold_upper
         elif deviation_type == 'below':
-            is_anomaly = amount < threshold_lower
+            is_anomaly = float(amount) < threshold_lower
         
         if is_anomaly:
-            deviation_percent = ((amount - mean) / mean) * 100
+            deviation_percent = ((float(amount) - mean) / mean) * 100
             
             # محاسبه مبلغ مازاد
-            if amount > mean:
-                excess_amount = amount - threshold_upper
+            if float(amount) > mean:
+                excess_amount = float(amount) - threshold_upper
                 threshold = threshold_upper
             else:
-                excess_amount = threshold_lower - amount
+                excess_amount = threshold_lower - float(amount)
                 threshold = threshold_lower
             
             # تعیین سطح ریسک بر اساس Z-Score

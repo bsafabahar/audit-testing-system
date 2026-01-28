@@ -67,8 +67,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         return []
     
     # محاسبه میانگین و انحراف معیار
-    avg_margin = statistics.mean(margins)
-    stdev_margin = statistics.stdev(margins)
+    avg_margin = float(statistics.mean(margins))
+    stdev_margin = float(statistics.stdev(margins))
     
     if stdev_margin == 0:
         return []

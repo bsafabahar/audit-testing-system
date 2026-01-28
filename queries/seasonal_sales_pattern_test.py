@@ -113,13 +113,13 @@ def calculate_seasonal_indices(sorted_periods, seasonal_period):
         monthly_data[month_index].append(data['amount'])
     
     # محاسبه میانگین کلی
-    overall_mean = statistics.mean(amounts) if amounts else 1
+    overall_mean = float(statistics.mean(amounts)) if amounts else 1
     
     # محاسبه شاخص فصلی برای هر ماه
     seasonal_indices = {}
     for month_index, values in monthly_data.items():
         if values:
-            month_mean = statistics.mean(values)
+            month_mean = float(statistics.mean(values))
             seasonal_indices[month_index] = month_mean / overall_mean if overall_mean > 0 else 1
         else:
             seasonal_indices[month_index] = 1
@@ -131,14 +131,14 @@ def analyze_time_series(sorted_periods, seasonal_indices, threshold):
     """تجزیه سری زمانی"""
     data = []
     amounts = [d['amount'] for _, d in sorted_periods]
-    overall_mean = statistics.mean(amounts) if amounts else 0
+    overall_mean = float(statistics.mean(amounts)) if amounts else 0
     
     for i, (period, sales_data) in enumerate(sorted_periods):
         month_index = i % len(seasonal_indices)
         seasonal_index = seasonal_indices.get(month_index, 1)
         seasonal_avg = overall_mean * seasonal_index
         
-        amount = sales_data['amount']
+        amount = float(sales_data['amount'])
         deviation = ((amount - seasonal_avg) / seasonal_avg * 100) if seasonal_avg > 0 else 0
         
         # تعیین نوع الگو
@@ -165,12 +165,12 @@ def analyze_moving_average(sorted_periods, window_size, threshold):
     amounts = [d['amount'] for _, d in sorted_periods]
     
     for i, (period, sales_data) in enumerate(sorted_periods):
-        amount = sales_data['amount']
+        amount = float(sales_data['amount'])
         
         # محاسبه میانگین متحرک
         start_idx = max(0, i - window_size + 1)
-        window_amounts = amounts[start_idx:i+1]
-        moving_avg = statistics.mean(window_amounts) if window_amounts else 0
+        window_amounts = [float(amounts[j]) for j in range(start_idx, i+1)]
+        moving_avg = float(statistics.mean(window_amounts)) if window_amounts else 0
         
         # محاسبه شاخص فصلی (نسبت به میانگین متحرک)
         seasonal_index = amount / moving_avg if moving_avg > 0 else 1
@@ -199,10 +199,10 @@ def analyze_seasonal_index(sorted_periods, seasonal_indices, seasonal_period, th
     """تحلیل شاخص فصلی"""
     data = []
     amounts = [d['amount'] for _, d in sorted_periods]
-    overall_mean = statistics.mean(amounts) if amounts else 0
+    overall_mean = float(statistics.mean(amounts)) if amounts else 0
     
     for i, (period, sales_data) in enumerate(sorted_periods):
-        amount = sales_data['amount']
+        amount = float(sales_data['amount'])
         month_index = i % seasonal_period
         
         expected_index = seasonal_indices.get(month_index, 1)

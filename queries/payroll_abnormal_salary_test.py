@@ -73,8 +73,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         return []
     
     # محاسبه میانگین و انحراف معیار
-    avg_salary = statistics.mean(all_salaries)
-    stdev_salary = statistics.stdev(all_salaries)
+    avg_salary = float(statistics.mean(all_salaries))
+    stdev_salary = float(statistics.stdev(all_salaries))
     
     if stdev_salary == 0:
         return []

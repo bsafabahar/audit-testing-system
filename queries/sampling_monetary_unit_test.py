@@ -65,7 +65,8 @@ def execute(session: ReadOnlySession) -> List[Dict[str, Any]]:
         if amount <= 0:
             continue
         
-        total_amount += amount
+        amount_float = float(amount)
+        total_amount += amount_float
         transactions.append({
             'transaction': t,
             'amount': amount,

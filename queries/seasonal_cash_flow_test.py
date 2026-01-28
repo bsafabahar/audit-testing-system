@@ -17,7 +17,6 @@ from query_runner import get_parameter
 from types_definitions import QueryDefinition
 from database import ReadOnlySession
 from collections import defaultdict
-from decimal import Decimal
 import statistics
 
 
@@ -110,7 +109,7 @@ def analyze_cash_flow_trend(sorted_periods, threshold):
     net_flows = [flows['inflow'] - flows['outflow'] for _, flows in sorted_periods]
     
     # محاسبه میانگین کلی
-    avg_net_flow = statistics.mean(net_flows) if net_flows else 0
+    avg_net_flow = float(statistics.mean(net_flows)) if net_flows else 0
     
     for i, (period, flows) in enumerate(sorted_periods):
         inflow = flows['inflow']
@@ -120,7 +119,7 @@ def analyze_cash_flow_trend(sorted_periods, threshold):
         # محاسبه میانگین متحرک (3 دوره)
         start_idx = max(0, i - 2)
         window_flows = net_flows[start_idx:i+1]
-        moving_avg = statistics.mean(window_flows) if window_flows else 0
+        moving_avg = float(statistics.mean(window_flows)) if window_flows else 0
         
         deviation = ((net_flow - moving_avg) / abs(moving_avg) * 100) if moving_avg != 0 else 0
         
@@ -158,7 +157,7 @@ def analyze_seasonal_pattern(sorted_periods, period_months, threshold):
     # محاسبه میانگین هر ماه
     monthly_averages = {}
     for month_index, values in monthly_flows.items():
-        monthly_averages[month_index] = statistics.mean(values) if values else 0
+        monthly_averages[month_index] = float(statistics.mean(values)) if values else 0
     
     # تحلیل هر دوره
     for i, (period, flows) in enumerate(sorted_periods):
@@ -197,8 +196,8 @@ def analyze_cash_flow_volatility(sorted_periods, threshold):
     
     # محاسبه آمار کلی
     if len(net_flows) > 1:
-        avg_net_flow = statistics.mean(net_flows)
-        stdev_net_flow = statistics.stdev(net_flows)
+        avg_net_flow = float(statistics.mean(net_flows))
+        stdev_net_flow = float(statistics.stdev(net_flows))
         volatility = (stdev_net_flow / abs(avg_net_flow) * 100) if avg_net_flow != 0 else 0
     else:
         avg_net_flow = net_flows[0] if net_flows else 0
@@ -214,8 +213,8 @@ def analyze_cash_flow_volatility(sorted_periods, threshold):
         window_flows = net_flows[start_idx:i+1]
         
         if len(window_flows) > 1:
-            window_avg = statistics.mean(window_flows)
-            window_stdev = statistics.stdev(window_flows)
+            window_avg = float(statistics.mean(window_flows))
+            window_stdev = float(statistics.stdev(window_flows))
             local_volatility = (window_stdev / abs(window_avg) * 100) if window_avg != 0 else 0
         else:
             window_avg = window_flows[0] if window_flows else 0
@@ -224,7 +223,7 @@ def analyze_cash_flow_volatility(sorted_periods, threshold):
         deviation = local_volatility
         
         # تعیین نوع الگو و ریسک
-        if local_volatility >= threshold * Decimal('1.5'):
+        if local_volatility >= threshold * 1.5:
             pattern_type = 'نوسان بسیار بالا'
             risk_indicator = 'بحرانی'
         elif local_volatility >= threshold:
@@ -239,9 +238,9 @@ def analyze_cash_flow_volatility(sorted_periods, threshold):
         
         row = {
             'Period': period,
-            'CashInflow': round(inflow, 2),
-            'CashOutflow': round(outflow, 2),
-            'NetCashFlow': round(net_flow, 2),
+            'CashInflow': round(float(inflow), 2),
+            'CashOutflow': round(float(outflow), 2),
+            'NetCashFlow': round(float(net_flow), 2),
             'SeasonalAverage': round(window_avg, 2),
             'Deviation': round(deviation, 2),
             'PatternType': pattern_type,
@@ -268,11 +267,11 @@ def determine_cash_flow_pattern(net_flow, average, threshold):
         return 'بهبود به مثبت'
     elif abs(deviation) < threshold:
         return 'پایدار'
-    elif deviation > threshold * Decimal('1.5'):
+    elif deviation > threshold * 1.5:
         return 'رشد بسیار بالا'
     elif deviation > threshold:
         return 'رشد قابل توجه'
-    elif deviation < -threshold * Decimal('1.5'):
+    elif deviation < -threshold * 1.5:
         return 'کاهش شدید'
     else:
         return 'کاهش قابل توجه'
@@ -281,11 +280,11 @@ def determine_cash_flow_pattern(net_flow, average, threshold):
 def determine_cash_flow_risk(deviation, net_flow, threshold):
     """تعیین شاخص ریسک جریان نقدی"""
     if net_flow < 0:
-        if abs(deviation) >= threshold * Decimal('1.5'):
+        if abs(deviation) >= threshold * 1.5:
             return 'بحرانی'
         else:
             return 'بالا'
-    elif abs(deviation) >= threshold * Decimal('1.5'):
+    elif abs(deviation) >= threshold * 1.5:
         return 'بالا'
     elif abs(deviation) >= threshold:
         return 'متوسط'
