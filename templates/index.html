@@ -983,6 +983,7 @@
                     {% if current_user.is_admin %}
                     <a href="{{ url_for('manage_users') }}" class="btn-manage-users">👥 مدیریت کاربران</a>
                     {% endif %}
+                    <a href="{{ url_for('test_generator_page') }}" class="btn-manage-users">🤖 آزمون‌ساز</a>
                     <a href="{{ url_for('change_password') }}" class="btn-manage-users">🔑 تغییر رمز</a>
                     <a href="{{ url_for('logout') }}" class="btn-logout">خروج 🚪</a>
                 </div>
