@@ -297,6 +297,25 @@ This system includes **69 comprehensive audit tests** organized into 23 categori
 
 Categories include: Benford's Law, Threshold Analysis, Duplicate Detection, Statistical Tests, Fraud Detection, AI/ML Tests, and many more.
 
+## 🤖 AI-Powered Test Generator
+
+The system now includes an intelligent test generator that automatically creates audit test files using AI (OpenAI GPT or Anthropic Claude).
+
+### Features:
+- 🚀 Automatic Python code generation
+- 📋 Follows project standards and conventions
+- 🔧 Supports OpenAI (GPT-4, GPT-3.5) and Anthropic (Claude)
+- 💾 Automatic saving to queries folder
+- 🌐 User-friendly Persian interface
+
+### Quick Start:
+1. Access the test generator from the main page (🤖 آزمون‌ساز button)
+2. Describe your test requirements in Persian or English
+3. Select AI provider and enter your API key
+4. Click generate and the test file will be created automatically
+
+For detailed instructions, see **[Test Generator Guide](./TEST_GENERATOR_GUIDE.md)**
+
 ## 📚 Additional Resources
 
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
