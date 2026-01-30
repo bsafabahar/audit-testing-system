@@ -41,7 +41,13 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 20px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            text-align: right;
         }
 
         .header h1 {
@@ -52,6 +58,58 @@
         .header p {
             font-size: 0.85em;
             opacity: 0.95;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        .user-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .user-role {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .btn-manage-users {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-left: 10px;
+            transition: background 0.3s;
+        }
+
+        .btn-manage-users:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         /* Main Layout: Tree Menu (Right) + Content Area (Left) */
@@ -912,8 +970,23 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎯 سیستم آزمون‌های حسابرسی</h1>
-            <p>تعداد کل آزمون‌ها: <strong>{{ total_tests }}</strong> آزمون در <strong>{{ total_categories }}</strong> دسته</p>
+            <div class="header-title">
+                <h1>🎯 سیستم آزمون‌های حسابرسی</h1>
+                <p>تعداد کل آزمون‌ها: <strong>{{ total_tests }}</strong> آزمون در <strong>{{ total_categories }}</strong> دسته</p>
+            </div>
+            <div class="header-user">
+                <div class="user-info">
+                    <div class="user-name">{{ current_user.full_name or current_user.username }}</div>
+                    <div class="user-role">{% if current_user.is_admin %}مدیر سیستم{% else %}کاربر{% endif %}</div>
+                </div>
+                <div>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('manage_users') }}" class="btn-manage-users">👥 مدیریت کاربران</a>
+                    {% endif %}
+                    <a href="{{ url_for('change_password') }}" class="btn-manage-users">🔑 تغییر رمز</a>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">خروج 🚪</a>
+                </div>
+            </div>
         </div>
 
         <div class="main-content">

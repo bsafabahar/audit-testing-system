@@ -9,7 +9,7 @@ Audit Tests Web UI
 - نتایج را نمایش می‌دهد
 """
 
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for, flash
 import pandas as pd
 import os
 import importlib
@@ -19,15 +19,18 @@ from datetime import datetime
 import json
 from pathlib import Path
 import traceback
+from functools import wraps
 
 # اضافه کردن مسیر پروژه به sys.path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from database import get_db, Base, db
-from models import Transaction
+from models import Transaction, User
 from sqlalchemy.orm import sessionmaker
 from test_data_requirements import get_test_requirements, get_all_required_files
+from auth import init_auth, authenticate_user, create_user, create_password_reset_token, reset_password, send_password_reset_email, get_all_users, update_user
+from flask_login import login_user, logout_user, login_required, current_user
 
 # ایجاد session factory برای write operations
 def get_write_session():
@@ -42,6 +45,10 @@ def get_write_session():
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'audit-system-secret-key-change-in-production')
+
+# مقداردهی اولیه سیستم احراز هویت
+init_auth(app)
 
 # ایجاد پوشه uploads
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -504,6 +511,7 @@ SUBSYSTEM_MAPPING = {
 
 
 @app.route('/')
+@login_required
 def index():
     """صفحه اصلی"""
     # Build subsystems with full test details
@@ -536,6 +544,7 @@ def index():
 
 
 @app.route('/test-requirements/<test_id>')
+@login_required
 def get_test_requirements_api(test_id):
     """دریافت نیازمندی‌های داده یک آزمون"""
     try:
@@ -546,6 +555,7 @@ def get_test_requirements_api(test_id):
 
 
 @app.route('/tests-requirements', methods=['POST'])
+@login_required
 def get_tests_requirements():
     """دریافت نیازمندی‌های داده برای چند آزمون"""
     try:
@@ -557,6 +567,7 @@ def get_tests_requirements():
 
 
 @app.route('/test-description/<test_id>')
+@login_required
 def get_test_description(test_id):
     """دریافت توضیحات آزمون از فایل MD"""
     try:
@@ -572,6 +583,7 @@ def get_test_description(test_id):
 
 
 @app.route('/upload', methods=['POST'])
+@login_required
 def upload_file():
     """آپلود فایل اکسل و وارد کردن به دیتابیس"""
     try:
@@ -660,6 +672,7 @@ def upload_file():
 
 
 @app.route('/run-test/<test_id>', methods=['POST'])
+@login_required
 def run_test(test_id):
     """اجرای یک آزمون خاص"""
     try:
@@ -701,6 +714,7 @@ def run_test(test_id):
 
 
 @app.route('/get-test-parameters/<test_id>', methods=['GET'])
+@login_required
 def get_test_parameters(test_id):
     """دریافت پارامترهای یک آزمون"""
     try:
@@ -747,6 +761,7 @@ def get_test_parameters(test_id):
 
 
 @app.route('/run-all-tests', methods=['POST'])
+@login_required
 def run_all_tests():
     """اجرای همه آزمون‌ها"""
     results = {}
@@ -783,6 +798,7 @@ def run_all_tests():
 
 
 @app.route('/export/<test_id>')
+@login_required
 def export_test(test_id):
     """خروجی اکسل از نتایج آزمون"""
     try:
@@ -812,12 +828,263 @@ def export_test(test_id):
         return jsonify({'error': str(e)}), 500
 
 
+# روت‌های احراز هویت
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """صفحه ورود"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = request.form.get('remember', False)
+        
+        user = authenticate_user(username, password)
+        
+        if user:
+            login_user(user, remember=remember)
+            flash('خوش آمدید!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page if next_page else url_for('index'))
+        else:
+            flash('نام کاربری یا رمز عبور اشتباه است.', 'danger')
+    
+    return render_template('login.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """صفحه ثبت نام"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        full_name = request.form.get('full_name', '')
+        
+        # اعتبارسنجی
+        if password != confirm_password:
+            flash('رمز عبور و تکرار آن یکسان نیستند.', 'danger')
+            return render_template('register.html')
+        
+        if len(password) < 6:
+            flash('رمز عبور باید حداقل 6 کاراکتر باشد.', 'danger')
+            return render_template('register.html')
+        
+        # ایجاد کاربر
+        user = create_user(username, email, password, full_name)
+        
+        if user:
+            flash('ثبت نام با موفقیت انجام شد. اکنون می‌توانید وارد شوید.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('نام کاربری یا ایمیل قبلاً استفاده شده است.', 'danger')
+    
+    return render_template('register.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    """خروج از سیستم"""
+    logout_user()
+    flash('با موفقیت خارج شدید.', 'success')
+    return redirect(url_for('login'))
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """صفحه فراموشی رمز عبور"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        
+        # ایجاد توکن بازیابی
+        token = create_password_reset_token(email)
+        
+        if token:
+            # ارسال ایمیل
+            base_url = request.url_root.rstrip('/')
+            send_password_reset_email(email, token, base_url)
+            flash('لینک بازیابی رمز عبور به ایمیل شما ارسال شد.', 'success')
+        else:
+            # به منظور امنیت، همیشه پیام موفقیت نمایش می‌دهیم
+            flash('اگر این ایمیل در سیستم ثبت شده باشد، لینک بازیابی به آن ارسال می‌شود.', 'info')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password_route(token):
+    """صفحه بازیابی رمز عبور"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # اعتبارسنجی
+        if password != confirm_password:
+            flash('رمز عبور و تکرار آن یکسان نیستند.', 'danger')
+            return render_template('reset_password.html', token=token)
+        
+        if len(password) < 6:
+            flash('رمز عبور باید حداقل 6 کاراکتر باشد.', 'danger')
+            return render_template('reset_password.html', token=token)
+        
+        # بازیابی رمز عبور
+        if reset_password(token, password):
+            flash('رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('لینک بازیابی نامعتبر یا منقضی شده است.', 'danger')
+    
+    return render_template('reset_password.html', token=token)
+
+
+@app.route('/manage-users')
+@login_required
+def manage_users():
+    """صفحه مدیریت کاربران (فقط برای ادمین)"""
+    if not current_user.is_admin:
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+    
+    users = get_all_users()
+    return render_template('manage_users.html', users=users)
+
+
+@app.route('/toggle-user-status/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_user_status(user_id):
+    """فعال/غیرفعال کردن کاربر"""
+    if not current_user.is_admin:
+        flash('شما اجازه انجام این عملیات را ندارید.', 'danger')
+        return redirect(url_for('index'))
+    
+    if user_id == current_user.id:
+        flash('شما نمی‌توانید وضعیت خودتان را تغییر دهید.', 'danger')
+        return redirect(url_for('manage_users'))
+    
+    # دریافت وضعیت فعلی کاربر
+    if not db._initialized:
+        db._initialize()
+    session = db.SessionLocal()
+    try:
+        user = session.query(User).get(user_id)
+        if user:
+            new_status = not user.is_active
+            update_user(user_id, is_active=new_status)
+            flash(f'کاربر {user.username} با موفقیت {"فعال" if new_status else "غیرفعال"} شد.', 'success')
+        else:
+            flash('کاربر یافت نشد.', 'danger')
+    finally:
+        session.close()
+    
+    return redirect(url_for('manage_users'))
+
+
+@app.route('/add-user', methods=['GET', 'POST'])
+@login_required
+def add_user():
+    """افزودن کاربر جدید توسط ادمین"""
+    if not current_user.is_admin:
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        full_name = request.form.get('full_name', '')
+        is_admin = request.form.get('is_admin') == '1'
+        
+        # اعتبارسنجی
+        if password != confirm_password:
+            flash('رمز عبور و تکرار آن یکسان نیستند.', 'danger')
+            return render_template('add_user.html')
+        
+        if len(password) < 6:
+            flash('رمز عبور باید حداقل 6 کاراکتر باشد.', 'danger')
+            return render_template('add_user.html')
+        
+        # ایجاد کاربر
+        user = create_user(username, email, password, full_name, is_admin)
+        
+        if user:
+            flash(f'کاربر {username} با موفقیت ایجاد شد.', 'success')
+            return redirect(url_for('manage_users'))
+        else:
+            flash('نام کاربری یا ایمیل قبلاً استفاده شده است.', 'danger')
+    
+    return render_template('add_user.html')
+
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """تغییر رمز عبور کاربر"""
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # اعتبارسنجی
+        if new_password != confirm_password:
+            flash('رمز عبور جدید و تکرار آن یکسان نیستند.', 'danger')
+            return render_template('change_password.html')
+        
+        if len(new_password) < 6:
+            flash('رمز عبور باید حداقل 6 کاراکتر باشد.', 'danger')
+            return render_template('change_password.html')
+        
+        # تغییر رمز عبور
+        from auth import change_password as change_pwd
+        if change_pwd(current_user.id, old_password, new_password):
+            flash('رمز عبور با موفقیت تغییر کرد.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('رمز عبور فعلی اشتباه است.', 'danger')
+    
+    return render_template('change_password.html')
+
+
 if __name__ == '__main__':
     # ایجاد جداول دیتابیس
     if not db._initialized:
         db._initialize()
     if db.engine:
         Base.metadata.create_all(db.engine)
+        
+        # ایجاد کاربر ادمین پیش‌فرض اگر وجود ندارد
+        session = db.SessionLocal()
+        try:
+            admin = session.query(User).filter(User.username == 'admin').first()
+            if not admin:
+                admin_user = create_user(
+                    username='admin',
+                    email='admin@audit-system.com',
+                    password='admin123',
+                    full_name='مدیر سیستم',
+                    is_admin=True
+                )
+                if admin_user:
+                    print('کاربر ادمین پیش‌فرض ایجاد شد:')
+                    print('نام کاربری: admin')
+                    print('رمز عبور: admin123')
+                    print('لطفاً رمز عبور را تغییر دهید!')
+        finally:
+            session.close()
     
     # اجرای سرور
     app.run(debug=True, host='0.0.0.0', port=5000)

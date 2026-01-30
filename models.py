@@ -15,6 +15,7 @@ from database import Base
 from config import Config
 from datetime import datetime
 import uuid
+from flask_login import UserMixin
 
 # Determine the appropriate UUID type based on database
 def get_uuid_column_type():
@@ -516,3 +517,28 @@ class SalesTransactions(Base, SoftDeleteMixin):
     
     def __repr__(self):
         return f"<SalesTransactions(Id={self.Id}, InvoiceNumber='{self.InvoiceNumber}', Amount={self.Amount})>"
+
+
+# مدل کاربر برای سیستم احراز هویت
+class User(Base, UserMixin):
+    """مدل کاربر با قابلیت احراز هویت"""
+    __tablename__ = 'users'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(80), unique=True, nullable=False, comment='نام کاربری')
+    email = Column(String(120), unique=True, nullable=False, comment='ایمیل')
+    password_hash = Column(String(255), nullable=False, comment='رمز عبور هش شده')
+    full_name = Column(String(200), comment='نام کامل')
+    is_active = Column(Boolean, default=True, nullable=False, comment='فعال/غیرفعال')
+    is_admin = Column(Boolean, default=False, nullable=False, comment='مدیر سیستم')
+    created_at = Column(DateTime, default=datetime.now, nullable=False, comment='تاریخ ثبت')
+    last_login = Column(DateTime, comment='آخرین ورود')
+    reset_token = Column(String(100), comment='توکن بازیابی رمز عبور')
+    reset_token_expiry = Column(DateTime, comment='انقضای توکن بازیابی')
+    
+    def __repr__(self):
+        return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
+    
+    def get_id(self):
+        """Required by Flask-Login"""
+        return str(self.id)
