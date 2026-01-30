@@ -54,6 +54,56 @@ init_auth(app)
 # ایجاد پوشه uploads
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+
+def load_custom_tests():
+    """
+    بارگذاری آزمون‌های شخصی از پوشه queries/custom_tests
+    
+    Returns:
+        لیست آزمون‌های شخصی
+    """
+    custom_tests = []
+    custom_tests_dir = Path(__file__).parent / 'queries' / 'custom_tests'
+    
+    if not custom_tests_dir.exists():
+        return custom_tests
+    
+    # فایل‌های پایتون در پوشه custom_tests
+    for py_file in custom_tests_dir.glob('*.py'):
+        # بررسی اینکه __init__.py نباشد
+        if py_file.name == '__init__.py':
+            continue
+            
+        # خواندن docstring برای استخراج نام فارسی و انگلیسی
+        try:
+            with open(py_file, 'r', encoding='utf-8') as f:
+                content = f.read(500)  # فقط 500 کاراکتر اول
+                
+            # استخراج docstring
+            import re
+            docstring_match = re.search(r'"""\s*\n(.*?)\n(.*?)\n', content, re.DOTALL)
+            
+            if docstring_match:
+                farsi_name = docstring_match.group(1).strip()
+                english_name = docstring_match.group(2).strip()
+                
+                # ID از نام فایل (بدون .py) با پیشوند custom_tests_
+                test_id = f"custom_tests_{py_file.stem}"
+                
+                # اضافه کردن به لیست آزمون‌های شخصی
+                if farsi_name and english_name:
+                    custom_tests.append({
+                        'id': test_id,
+                        'name': farsi_name,
+                        'icon': '🔬'  # آیکون پیش‌فرض برای آزمون‌های شخصی
+                    })
+        except Exception as e:
+            print(f"خطا در خواندن فایل {py_file.name}: {str(e)}")
+            continue
+    
+    return custom_tests
+
+
 # لیست تمام آزمون‌های موجود
 AUDIT_TESTS = {
     'benford': {
@@ -515,6 +565,9 @@ SUBSYSTEM_MAPPING = {
 @login_required
 def index():
     """صفحه اصلی"""
+    # دریافت لیست آزمون‌ها با آزمون‌های شخصی
+    audit_tests = get_audit_tests_with_custom()
+    
     # Build subsystems with full test details
     subsystems = {}
     for subsystem_id, subsystem_info in SUBSYSTEM_MAPPING.items():
@@ -527,18 +580,18 @@ def index():
         # Find full test details for each test_id
         for test_id in subsystem_info['tests']:
             # Search through all categories to find the test
-            for category_id, category in AUDIT_TESTS.items():
+            for category_id, category in audit_tests.items():
                 for test in category['tests']:
                     if test['id'] == test_id:
                         subsystems[subsystem_id]['tests'].append(test)
                         break
     
     # Calculate totals
-    total_tests = sum(len(category['tests']) for category in AUDIT_TESTS.values())
-    total_categories = len(AUDIT_TESTS)
+    total_tests = sum(len(category['tests']) for category in audit_tests.values())
+    total_categories = len(audit_tests)
     
     return render_template('index.html', 
-                         audit_tests=AUDIT_TESTS, 
+                         audit_tests=audit_tests, 
                          subsystems=subsystems,
                          total_tests=total_tests,
                          total_categories=total_categories)
@@ -553,6 +606,53 @@ def get_test_requirements_api(test_id):
         return jsonify({'success': True, 'requirements': requirements})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+
+def get_audit_tests_with_custom():
+    """
+    دریافت لیست کامل آزمون‌ها شامل آزمون‌های شخصی
+    این تابع در هر درخواست فراخوانی می‌شود تا آزمون‌های جدید را شناسایی کند
+    
+    Returns:
+        دیکشنری کامل آزمون‌ها
+    """
+    # کپی از لیست اصلی
+    tests = dict(AUDIT_TESTS)
+    
+    # حذف آزمون‌های شخصی قبلی اگر وجود دارد
+    if 'custom' in tests:
+        del tests['custom']
+    
+    # بارگذاری مجدد آزمون‌های شخصی
+    custom_tests = load_custom_tests()
+    if custom_tests:
+        tests['custom'] = {
+            'name': 'آزمون‌های شخصی',
+            'tests': custom_tests
+        }
+    
+    return tests
+
+
+@app.route('/refresh-custom-tests', methods=['GET'])
+@login_required
+def refresh_custom_tests():
+    """بارگذاری مجدد آزمون‌های شخصی"""
+    try:
+        # بارگذاری مجدد آزمون‌های شخصی
+        custom_tests = load_custom_tests()
+        
+        return jsonify({
+            'success': True,
+            'message': f'{len(custom_tests)} آزمون شخصی یافت شد',
+            'count': len(custom_tests),
+            'custom_tests': custom_tests
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 
 @app.route('/tests-requirements', methods=['POST'])
@@ -572,7 +672,15 @@ def get_tests_requirements():
 def get_test_description(test_id):
     """دریافت توضیحات آزمون از فایل MD"""
     try:
-        md_path = os.path.join('queries', f'{test_id}.md')
+        # اگر test_id با custom_tests_ شروع شود، فایل در custom_tests است
+        if test_id.startswith('custom_tests_'):
+            # حذف پیشوند برای گرفتن نام واقعی فایل
+            actual_test_name = test_id.replace('custom_tests_', '')
+            md_path = os.path.join('queries', 'custom_tests', f'{actual_test_name}.md')
+        else:
+            # فایل‌های استاندارد در queries اصلی
+            md_path = os.path.join('queries', f'{test_id}.md')
+        
         if os.path.exists(md_path):
             with open(md_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -677,8 +785,14 @@ def upload_file():
 def run_test(test_id):
     """اجرای یک آزمون خاص"""
     try:
-        # بارگذاری ماژول آزمون
-        module_path = f'queries.{test_id}'
+        # بررسی آیا آزمون از نوع custom است
+        if test_id.startswith('custom_tests_'):
+            # حذف پیشوند custom_tests_
+            actual_test_name = test_id.replace('custom_tests_', '')
+            module_path = f'queries.custom_tests.{actual_test_name}'
+        else:
+            module_path = f'queries.{test_id}'
+        
         test_module = importlib.import_module(module_path)
         
         # دریافت پارامترها از request (اختیاری)
@@ -726,8 +840,9 @@ def get_test_parameters(test_id):
             }), 400
         
         # بررسی اینکه test_id در لیست آزمون‌های مجاز باشد
+        all_tests = get_audit_tests_with_custom()
         valid_test_ids = set()
-        for category in AUDIT_TESTS.values():
+        for category in all_tests.values():
             for test in category['tests']:
                 valid_test_ids.add(test['id'])
         
@@ -736,8 +851,14 @@ def get_test_parameters(test_id):
                 'error': 'Test ID not found'
             }), 404
         
-        # بارگذاری ماژول آزمون
-        module_path = f'queries.{test_id}'
+        # بررسی آیا آزمون از نوع custom است
+        if test_id.startswith('custom_tests_'):
+            # حذف پیشوند custom_tests_
+            actual_test_name = test_id.replace('custom_tests_', '')
+            module_path = f'queries.custom_tests.{actual_test_name}'
+        else:
+            module_path = f'queries.{test_id}'
+        
         test_module = importlib.import_module(module_path)
         
         # دریافت تعریف پارامترها
@@ -837,6 +958,40 @@ def test_generator_page():
     return render_template('test_generator.html')
 
 
+@app.route('/test-api-connection', methods=['GET'])
+def test_api_connection():
+    """تست اتصال به API"""
+    try:
+        from test_generator import generate_test_with_avalai
+        
+        result = generate_test_with_avalai(
+            user_description="یک تست ساده برای شناسایی تراکنش‌های تکراری",
+            api_key="aa-7QZl0Ab58B13JYYTG5WCeOSq8UIJh5IgwpqNa6hZLgACOACf",
+            model="gpt-4o-mini",
+            base_url="https://api.avalai.ir/v1",
+            use_prompt=False
+        )
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'message': 'اتصال موفق',
+                'code_length': len(result),
+                'code_preview': result[:500]
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': 'خطا در دریافت پاسخ از API'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        })
+
+
 @app.route('/generate-test', methods=['POST'])
 @login_required
 def generate_test():
@@ -851,10 +1006,12 @@ def generate_test():
             }), 400
         
         user_description = data.get('description', '').strip()
-        provider = data.get('provider', 'openai').lower()
+        provider = data.get('provider', 'avalai').lower()
         api_key = data.get('api_key', '').strip()
         model = data.get('model', '').strip() or None
         filename = data.get('filename', '').strip() or None
+        base_url = data.get('base_url', 'https://api.avalai.ir/v1').strip()
+        use_prompt = True  # همیشه از پرامپت کامل استفاده می‌شود
         
         # اعتبارسنجی ورودی
         if not user_description:
@@ -869,14 +1026,18 @@ def generate_test():
                 'message': 'لطفاً کلید API را وارد کنید'
             }), 400
         
-        if provider not in ['openai', 'anthropic']:
+        if provider not in ['avalai', 'anthropic']:
             return jsonify({
                 'success': False,
-                'message': 'ارائه‌دهنده نامعتبر است. فقط openai یا anthropic مجاز است'
+                'message': 'ارائه‌دهنده نامعتبر است. فقط avalai یا anthropic مجاز است'
             }), 400
         
         # مسیر پوشه queries
         queries_dir = os.path.join(os.path.dirname(__file__), 'queries')
+        
+        # لاگ اطلاعات درخواست
+        print(f"[DEBUG] Provider: {provider}, Model: {model}, Use Prompt: {use_prompt}")
+        print(f"[DEBUG] Description length: {len(user_description)}")
         
         # تولید و ذخیره آزمون
         result = generate_and_save_test(
@@ -885,15 +1046,22 @@ def generate_test():
             provider=provider,
             model=model,
             filename=filename,
-            queries_dir=queries_dir
+            queries_dir=queries_dir,
+            base_url=base_url,
+            use_prompt=use_prompt
         )
+        
+        print(f"[DEBUG] Result: {result.get('success')}, Message: {result.get('message')}")
         
         return jsonify(result)
     
     except Exception as e:
+        error_msg = f'خطا در تولید آزمون: {str(e)}'
+        print(f"[ERROR] {error_msg}")
+        print(traceback.format_exc())
         return jsonify({
             'success': False,
-            'message': f'خطا در تولید آزمون: {str(e)}',
+            'message': error_msg,
             'traceback': traceback.format_exc()
         }), 500
 

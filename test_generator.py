@@ -11,9 +11,68 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 
-# قالب پرامپت برای تولید آزمون
-TEST_GENERATION_PROMPT_TEMPLATE = """
-شما باید یک فایل پایتون برای آزمون حسابرسی بسازید که دقیقا از ساختار زیر پیروی کند:
+def save_generated_code_cache(code: str, cache_file: str = 'last_generated_test.py') -> bool:
+    """
+    ذخیره کد تولید شده در فایل cache
+    
+    Args:
+        code: کد تولید شده
+        cache_file: نام فایل cache
+        
+    Returns:
+        True در صورت موفقیت
+    """
+    try:
+        cache_path = Path(__file__).parent / cache_file
+        with open(cache_path, 'w', encoding='utf-8') as f:
+            f.write(code)
+        print(f"[INFO] کد تولید شده در {cache_path} ذخیره شد")
+        return True
+    except Exception as e:
+        print(f"[ERROR] خطا در ذخیره cache: {str(e)}")
+        return False
+
+
+def load_generated_code_cache(cache_file: str = 'last_generated_test.py') -> Optional[str]:
+    """
+    خواندن کد از فایل cache
+    
+    Args:
+        cache_file: نام فایل cache
+        
+    Returns:
+        کد ذخیره شده یا None
+    """
+    try:
+        cache_path = Path(__file__).parent / cache_file
+        if cache_path.exists():
+            with open(cache_path, 'r', encoding='utf-8') as f:
+                code = f.read()
+            print(f"[INFO] کد از cache بارگذاری شد ({len(code)} کاراکتر)")
+            return code
+    except Exception as e:
+        print(f"[ERROR] خطا در خواندن cache: {str(e)}")
+    return None
+
+
+def load_prompt_template() -> str:
+    """
+    بارگذاری قالب پرامپت از فایل
+    
+    Returns:
+        متن پرامپت یا پرامپت ساده در صورت خطا
+    """
+    try:
+        prompt_file = Path(__file__).parent / 'test_generation_prompt.txt'
+        if prompt_file.exists():
+            with open(prompt_file, 'r', encoding='utf-8') as f:
+                return f.read()
+    except Exception as e:
+        print(f"خطا در خواندن فایل پرامپت: {str(e)}")
+    
+    # پرامپت ساده برای زمانی که فایل در دسترس نیست
+    return """
+یک فایل پایتون برای آزمون حسابرسی بساز که دقیقا از ساختار زیر پیروی کند:
 
 ***
 
@@ -394,29 +453,45 @@ trans_id = str(t.TransactionID) if hasattr(t, 'TransactionID') and t.Transaction
 """
 
 
-def generate_test_with_openai(user_description: str, api_key: str, model: str = "gpt-4") -> Optional[str]:
+def generate_test_with_avalai(user_description: str, api_key: str, model: str = "gpt-4o-mini", base_url: str = "https://api.avalai.ir/v1", use_prompt: bool = True) -> Optional[str]:
     """
-    تولید کد آزمون با استفاده از OpenAI API
+    تولید کد آزمون با استفاده از AvalAI API
     
     Args:
         user_description: توضیحات آزمون از کاربر
-        api_key: کلید API OpenAI
-        model: مدل OpenAI (پیشفرض: gpt-4)
+        api_key: کلید API AvalAI
+        model: مدل AvalAI (پیشفرض: gpt-4o-mini)
+        base_url: آدرس پایه API AvalAI
+        use_prompt: استفاده از پرامپت کامل (True) یا فقط توضیحات کاربر (False)
         
     Returns:
         کد پایتون تولید شده یا None در صورت خطا
     """
     try:
-        import openai
+        print(f"[DEBUG] Starting generate_test_with_avalai...")
+        print(f"[DEBUG] Model: {model}, Use Prompt: {use_prompt}")
         
-        # تنظیم کلید API
-        openai.api_key = api_key
+        from openai import OpenAI
+        
+        # ساخت کلاینت با آدرس پایه AvalAI
+        client = OpenAI(
+            api_key=api_key,
+            base_url=base_url
+        )
+        print(f"[DEBUG] OpenAI client created")
         
         # ساخت پرامپت کامل
-        full_prompt = TEST_GENERATION_PROMPT_TEMPLATE.format(user_description=user_description)
+        if use_prompt:
+            prompt_template = load_prompt_template()
+            full_prompt = prompt_template.format(user_description=user_description)
+            print(f"[DEBUG] Using full prompt, length: {len(full_prompt)}")
+        else:
+            full_prompt = user_description
+            print(f"[DEBUG] Using simple prompt, length: {len(full_prompt)}")
         
-        # ارسال درخواست به OpenAI
-        response = openai.ChatCompletion.create(
+        print(f"[DEBUG] Sending request to AvalAI...")
+        # ارسال درخواست به AvalAI
+        response = client.chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "شما یک متخصص برنامه‌نویسی پایتون و حسابرسی هستید که کدهای با کیفیت بالا تولید می‌کنید."},
@@ -426,25 +501,55 @@ def generate_test_with_openai(user_description: str, api_key: str, model: str = 
             max_tokens=4000
         )
         
-        # استخراج کد تولید شده
-        generated_code = response.choices[0].message.content.strip()
+        print(f"[DEBUG] Response received")
         
-        # حذف markdown code blocks اگر وجود دارد
-        if generated_code.startswith("```python"):
-            generated_code = generated_code[9:]  # حذف ```python
-        if generated_code.startswith("```"):
-            generated_code = generated_code[3:]  # حذف ```
-        if generated_code.endswith("```"):
-            generated_code = generated_code[:-3]  # حذف ```
-            
-        return generated_code.strip()
+        # استخراج کد تولید شده
+        generated_content = response.choices[0].message.content.strip()
+        print(f"[DEBUG] Generated content length: {len(generated_content)}")
+        
+        # حذف markdown code blocks فقط از ابتدا و انتهای کد پایتون (قبل از ---MARKDOWN_FILE---)
+        # اگر کل محتوا با ```python شروع شود
+        if generated_content.startswith("```python"):
+            # پیدا کردن اولین خط بعد از ```python
+            lines = generated_content.split('\n')
+            if len(lines) > 1:
+                generated_content = '\n'.join(lines[1:])
+        elif generated_content.startswith("```"):
+            # پیدا کردن اولین خط بعد از ```
+            lines = generated_content.split('\n')
+            if len(lines) > 1:
+                generated_content = '\n'.join(lines[1:])
+        
+        # حذف ``` از انتهای کد قبل از ---MARKDOWN_FILE--- (اگر وجود دارد)
+        # ابتدا بررسی می‌کنیم که آیا ---MARKDOWN_FILE--- وجود دارد
+        if '---MARKDOWN_FILE---' in generated_content:
+            parts = generated_content.split('---MARKDOWN_FILE---')
+            python_part = parts[0].strip()
+            # حذف ``` از انتهای بخش پایتون
+            if python_part.endswith('```'):
+                python_part = python_part[:-3].strip()
+            # ترکیب دوباره
+            generated_content = python_part + '\n\n---MARKDOWN_FILE---\n\n' + parts[1]
+        else:
+            # اگر separator نداریم، فقط ``` آخر را حذف کنیم
+            if generated_content.endswith('```'):
+                generated_content = generated_content[:-3].strip()
+        
+        print(f"[DEBUG] Content cleaned, final length: {len(generated_content)}")
+        
+        # ذخیره در cache (کل محتوا شامل کد و md)
+        save_generated_code_cache(generated_content)
+        
+        return generated_content
         
     except Exception as e:
-        print(f"خطا در تولید آزمون با OpenAI: {str(e)}")
+        print(f"[ERROR] خطا در تولید آزمون با AvalAI: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
-def generate_test_with_anthropic(user_description: str, api_key: str, model: str = "claude-3-sonnet-20240229") -> Optional[str]:
+def generate_test_with_anthropic(user_description: str, api_key: str, model: str = "claude-3-sonnet-20240229", use_prompt: bool = True) -> Optional[str]:
     """
     تولید کد آزمون با استفاده از Anthropic Claude API
     
@@ -452,6 +557,7 @@ def generate_test_with_anthropic(user_description: str, api_key: str, model: str
         user_description: توضیحات آزمون از کاربر
         api_key: کلید API Anthropic
         model: مدل Claude (پیشفرض: claude-3-sonnet)
+        use_prompt: استفاده از پرامپت کامل (True) یا فقط توضیحات کاربر (False)
         
     Returns:
         کد پایتون تولید شده یا None در صورت خطا
@@ -463,7 +569,11 @@ def generate_test_with_anthropic(user_description: str, api_key: str, model: str
         client = anthropic.Anthropic(api_key=api_key)
         
         # ساخت پرامپت کامل
-        full_prompt = TEST_GENERATION_PROMPT_TEMPLATE.format(user_description=user_description)
+        if use_prompt:
+            prompt_template = load_prompt_template()
+            full_prompt = prompt_template.format(user_description=user_description)
+        else:
+            full_prompt = user_description
         
         # ارسال درخواست به Claude
         message = client.messages.create(
@@ -476,17 +586,33 @@ def generate_test_with_anthropic(user_description: str, api_key: str, model: str
         )
         
         # استخراج کد تولید شده
-        generated_code = message.content[0].text.strip()
+        generated_content = message.content[0].text.strip()
         
-        # حذف markdown code blocks اگر وجود دارد
-        if generated_code.startswith("```python"):
-            generated_code = generated_code[9:]
-        if generated_code.startswith("```"):
-            generated_code = generated_code[3:]
-        if generated_code.endswith("```"):
-            generated_code = generated_code[:-3]
+        # حذف markdown code blocks فقط از ابتدا و انتهای کد پایتون (قبل از ---MARKDOWN_FILE---)
+        if generated_content.startswith("```python"):
+            lines = generated_content.split('\n')
+            if len(lines) > 1:
+                generated_content = '\n'.join(lines[1:])
+        elif generated_content.startswith("```"):
+            lines = generated_content.split('\n')
+            if len(lines) > 1:
+                generated_content = '\n'.join(lines[1:])
+        
+        # حذف ``` از انتهای کد قبل از ---MARKDOWN_FILE---
+        if '---MARKDOWN_FILE---' in generated_content:
+            parts = generated_content.split('---MARKDOWN_FILE---')
+            python_part = parts[0].strip()
+            if python_part.endswith('```'):
+                python_part = python_part[:-3].strip()
+            generated_content = python_part + '\n\n---MARKDOWN_FILE---\n\n' + parts[1]
+        else:
+            if generated_content.endswith('```'):
+                generated_content = generated_content[:-3].strip()
+        
+        # ذخیره در cache
+        save_generated_code_cache(generated_content)
             
-        return generated_code.strip()
+        return generated_content
         
     except Exception as e:
         print(f"خطا در تولید آزمون با Claude: {str(e)}")
@@ -503,24 +629,131 @@ def extract_test_name(code: str) -> Optional[str]:
     Returns:
         نام پیشنهادی فایل یا None
     """
-    # تلاش برای استخراج نام از docstring
-    docstring_match = re.search(r'"""([^"]+)', code)
-    if docstring_match:
-        first_line = docstring_match.group(1).strip()
-        # تبدیل به snake_case
-        name = re.sub(r'[^\w\s-]', '', first_line)
-        name = re.sub(r'[\s-]+', '_', name)
-        name = name.lower()
-        if name and not name.endswith('_test'):
-            name += '_test'
-        return name
+    try:
+        # تلاش برای استخراج نام انگلیسی از خط دوم docstring
+        # الگو: """ + خط اول (فارسی) + newline + خط دوم (انگلیسی)
+        docstring_pattern = r'"""\s*\n([^\n]+)\n([^\n]+)'
+        match = re.search(docstring_pattern, code)
+        
+        if match:
+            farsi_line = match.group(1).strip()
+            english_line = match.group(2).strip()
+            
+            print(f"[DEBUG] Docstring line 1 (Farsi): '{farsi_line}'")
+            print(f"[DEBUG] Docstring line 2 (English): '{english_line}'")
+            
+            # فقط کاراکترهای انگلیسی، اعداد، فاصله و خط تیره را نگه دار
+            name = re.sub(r'[^a-zA-Z0-9\s-]', '', english_line)
+            # تبدیل فاصله‌ها به underscore
+            name = re.sub(r'[\s-]+', '_', name)
+            name = name.lower()
+            
+            print(f"[DEBUG] After cleaning: '{name}'")
+            
+            # محدود کردن طول به 50 کاراکتر
+            if len(name) > 50:
+                name = name[:50]
+            
+            # حذف underscore های اضافی از ابتدا و انتها
+            name = name.strip('_')
+            
+            # اضافه کردن _test اگر ندارد
+            if name and not name.endswith('_test'):
+                name += '_test'
+            
+            print(f"[DEBUG] Final extracted name: '{name}'")
+            return name if name else None
+        else:
+            print(f"[WARNING] Docstring pattern not matched!")
+            print(f"[DEBUG] First 200 chars of code: {code[:200]}")
+    except Exception as e:
+        print(f"خطا در استخراج نام: {str(e)}")
+        import traceback
+        traceback.print_exc()
     
     return None
 
 
+def separate_code_and_markdown(generated_content: str) -> tuple[str, Optional[str]]:
+    """
+    جدا کردن کد پایتون و فایل markdown از خروجی AI
+    
+    Args:
+        generated_content: محتوای تولید شده شامل کد و md
+        
+    Returns:
+        tuple از (کد پایتون، محتوای markdown یا None)
+    """
+    try:
+        # جستجوی علامت جداکننده
+        separator = '---MARKDOWN_FILE---'
+        
+        if separator in generated_content:
+            parts = generated_content.split(separator)
+            python_code = parts[0].strip()
+            markdown_content = parts[1].strip()
+            
+            # حذف markdown code blocks اگر وجود دارد
+            if markdown_content.startswith('```markdown'):
+                markdown_content = markdown_content[11:]
+            elif markdown_content.startswith('```md'):
+                markdown_content = markdown_content[5:]
+            elif markdown_content.startswith('```'):
+                markdown_content = markdown_content[3:]
+            
+            if markdown_content.endswith('```'):
+                markdown_content = markdown_content[:-3]
+            
+            print(f"[INFO] کد و markdown جدا شدند (Python: {len(python_code)} chars, MD: {len(markdown_content)} chars)")
+            return python_code.strip(), markdown_content.strip()
+        else:
+            print(f"[WARNING] علامت جداکننده {separator} پیدا نشد، فقط کد پایتون برگشت داده می‌شود")
+            return generated_content.strip(), None
+            
+    except Exception as e:
+        print(f"[ERROR] خطا در جدا کردن کد و markdown: {str(e)}")
+        return generated_content.strip(), None
+
+
+def save_markdown_file(markdown_content: str, filename: str, queries_dir: str = "queries") -> bool:
+    """
+    ذخیره فایل راهنمای markdown در پوشه queries/custom_tests
+    
+    Args:
+        markdown_content: محتوای markdown
+        filename: نام فایل (بدون پسوند)
+        queries_dir: مسیر پوشه queries
+        
+    Returns:
+        True در صورت موفقیت، False در صورت خطا
+    """
+    try:
+        # اطمینان از وجود پوشه queries/custom_tests
+        queries_path = Path(queries_dir) / 'custom_tests'
+        queries_path.mkdir(parents=True, exist_ok=True)
+        
+        # اضافه کردن پسوند .md اگر ندارد
+        if not filename.endswith('.md'):
+            filename = filename.replace('.py', '') + '.md'
+        
+        # مسیر کامل فایل
+        file_path = queries_path / filename
+        
+        # ذخیره فایل
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+        
+        print(f"فایل راهنما با موفقیت در {file_path} ذخیره شد")
+        return True
+        
+    except Exception as e:
+        print(f"خطا در ذخیره فایل markdown: {str(e)}")
+        return False
+
+
 def save_generated_test(code: str, filename: str, queries_dir: str = "queries") -> bool:
     """
-    ذخیره کد تولید شده در پوشه queries
+    ذخیره کد تولید شده در پوشه queries/custom_tests
     
     Args:
         code: کد پایتون تولید شده
@@ -531,9 +764,9 @@ def save_generated_test(code: str, filename: str, queries_dir: str = "queries") 
         True در صورت موفقیت، False در صورت خطا
     """
     try:
-        # اطمینان از وجود پوشه queries
-        queries_path = Path(queries_dir)
-        queries_path.mkdir(exist_ok=True)
+        # اطمینان از وجود پوشه queries/custom_tests
+        queries_path = Path(queries_dir) / 'custom_tests'
+        queries_path.mkdir(parents=True, exist_ok=True)
         
         # اضافه کردن پسوند .py اگر ندارد
         if not filename.endswith('.py'):
@@ -557,10 +790,12 @@ def save_generated_test(code: str, filename: str, queries_dir: str = "queries") 
 def generate_and_save_test(
     user_description: str,
     api_key: str,
-    provider: str = "openai",
+    provider: str = "avalai",
     model: Optional[str] = None,
     filename: Optional[str] = None,
-    queries_dir: str = "queries"
+    queries_dir: str = "queries",
+    base_url: str = "https://api.avalai.ir/v1",
+    use_prompt: bool = True
 ) -> Dict[str, Any]:
     """
     تولید و ذخیره یک آزمون حسابرسی جدید
@@ -568,21 +803,28 @@ def generate_and_save_test(
     Args:
         user_description: توضیحات آزمون از کاربر
         api_key: کلید API
-        provider: ارائه‌دهنده AI (openai یا anthropic)
+        provider: ارائه‌دهنده AI (avalai یا anthropic)
         model: مدل مورد استفاده (اختیاری)
         filename: نام فایل (اختیاری - در صورت نبودن از کد استخراج می‌شود)
         queries_dir: مسیر پوشه queries
+        base_url: آدرس پایه API (فقط برای avalai)
+        use_prompt: استفاده از پرامپت کامل (گران‌تر اما بهتر) یا ساده (ارزان‌تر)
         
     Returns:
         دیکشنری شامل نتیجه: {'success': bool, 'message': str, 'filename': str, 'code': str}
     """
     # تولید کد با AI
-    if provider.lower() == "openai":
-        model = model or "gpt-4"
-        generated_code = generate_test_with_openai(user_description, api_key, model)
+    print(f"[DEBUG] generate_and_save_test called")
+    print(f"[DEBUG] Provider: {provider}, Model: {model}, Use Prompt: {use_prompt}")
+    
+    if provider.lower() == "avalai":
+        model = model or "gpt-4o-mini"
+        print(f"[DEBUG] Calling generate_test_with_avalai...")
+        generated_code = generate_test_with_avalai(user_description, api_key, model, base_url, use_prompt)
+        print(f"[DEBUG] generate_test_with_avalai returned: {type(generated_code)}, Length: {len(generated_code) if generated_code else 0}")
     elif provider.lower() == "anthropic":
         model = model or "claude-3-sonnet-20240229"
-        generated_code = generate_test_with_anthropic(user_description, api_key, model)
+        generated_code = generate_test_with_anthropic(user_description, api_key, model, use_prompt)
     else:
         return {
             'success': False,
@@ -591,7 +833,10 @@ def generate_and_save_test(
             'code': None
         }
     
+    print(f"[DEBUG] Generated code: {generated_code is not None}")
+    
     if not generated_code:
+        print(f"[ERROR] No code generated!")
         return {
             'success': False,
             'message': 'خطا در تولید کد از AI',
@@ -599,26 +844,60 @@ def generate_and_save_test(
             'code': None
         }
     
+    print(f"[DEBUG] Code generated successfully, separating code and markdown...")
+    
+    # جدا کردن کد پایتون و markdown
+    python_code, markdown_content = separate_code_and_markdown(generated_code)
+    
     # استخراج نام فایل اگر مشخص نشده
     if not filename:
-        filename = extract_test_name(generated_code)
-        if not filename:
-            filename = 'custom_test'
+        filename = extract_test_name(python_code)
+        print(f"[DEBUG] Extracted filename: {filename}")
+        
+        # بررسی نام‌های نامعتبر
+        invalid_names = ['custom_test', 'test', 'my_test', 'audit_test', 'unnamed_test']
+        if not filename or filename in invalid_names:
+            # اگر نتوانستیم نام را استخراج کنیم یا نام عمومی است، از timestamp استفاده می‌کنیم
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'unnamed_test_{timestamp}'
+            print(f"[WARNING] Could not extract valid filename from docstring or name is generic!")
+            print(f"[DEBUG] Using timestamped filename: {filename}")
     
-    # ذخیره فایل
-    success = save_generated_test(generated_code, filename, queries_dir)
+    print(f"[DEBUG] Saving test to file: {filename}")
     
-    if success:
+    # ذخیره فایل پایتون
+    success_py = save_generated_test(python_code, filename, queries_dir)
+    
+    # ذخیره فایل markdown اگر وجود دارد
+    success_md = True
+    if markdown_content:
+        success_md = save_markdown_file(markdown_content, filename, queries_dir)
+        print(f"[DEBUG] Markdown save result: {success_md}")
+    else:
+        print(f"[WARNING] فایل markdown تولید نشد")
+    
+    print(f"[DEBUG] Python save result: {success_py}")
+    
+    if success_py:
+        message = 'آزمون با موفقیت تولید و ذخیره شد'
+        if markdown_content and success_md:
+            message += ' (شامل فایل راهنما)'
+        elif markdown_content and not success_md:
+            message += ' (خطا در ذخیره فایل راهنما)'
+        
         return {
             'success': True,
-            'message': 'آزمون با موفقیت تولید و ذخیره شد',
+            'message': message,
             'filename': filename if filename.endswith('.py') else f'{filename}.py',
-            'code': generated_code
+            'code': python_code,
+            'markdown': markdown_content if markdown_content else None
         }
     else:
         return {
             'success': False,
             'message': 'خطا در ذخیره فایل',
             'filename': filename,
-            'code': generated_code
+            'code': python_code,
+            'markdown': markdown_content if markdown_content else None
         }

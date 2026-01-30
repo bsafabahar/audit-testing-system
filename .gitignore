@@ -83,3 +83,6 @@ uploads/*
 .playwright/
 test-results/
 playwright-report/
+
+# Custom tests
+queries/custom_tests/

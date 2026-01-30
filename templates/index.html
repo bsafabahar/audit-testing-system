@@ -653,6 +653,89 @@
             transform: scale(1.1);
         }
 
+        .refresh-custom-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .refresh-custom-btn:hover {
+            background: #218838;
+        }
+
+        .refresh-custom-btn:active {
+            background: #1e7e34;
+        }
+
+        .custom-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .custom-header h4 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        .custom-header .refresh-custom-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            width: auto;
+            height: auto;
+        }
+
+        .custom-header .refresh-custom-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .no-custom-tests {
+            padding: 40px 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .empty-icon {
+            font-size: 4em;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .empty-state p {
+            margin: 10px 0;
+            color: #6c757d;
+        }
+
+        .empty-state .hint {
+            font-size: 0.9em;
+            color: #adb5bd;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -1005,11 +1088,16 @@
                         <span>🏦</span>
                         <span>دسته‌بندی زیرسیستم‌ها</span>
                     </button>
+                    <button class="view-btn" onclick="switchView('custom')" id="viewBtnCustom">
+                        <span>🔬</span>
+                        <span>آزمون‌های شخصی</span>
+                    </button>
                 </div>
 
                 <!-- Category View -->
                 <div class="view-content active" id="categoryView">
                     {% for category_id, category in audit_tests.items() %}
+                    {% if category_id != 'custom' %}
                     <div class="tree-category">
                         <div class="category-header" onclick="toggleCategory('{{ category_id }}')">
                             <span>{{ category.name }}</span>
@@ -1025,6 +1113,7 @@
                             {% endfor %}
                         </div>
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
 
@@ -1047,6 +1136,35 @@
                         </div>
                     </div>
                     {% endfor %}
+                </div>
+
+                <!-- Custom Tests View -->
+                <div class="view-content" id="customView">
+                    <div class="custom-header">
+                        <h4>🔬 آزمون‌های شخصی شما</h4>
+                    </div>
+                    
+                    {% if audit_tests.get('custom') %}
+                    <div class="custom-tests-container">
+                        <div class="test-list" style="display: block;">
+                            {% for test in audit_tests.custom.tests %}
+                            <div class="test-item" id="item-custom-{{ test.id }}">
+                                <button class="info-btn" onclick="event.stopPropagation(); showTestInfo('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')" title="اطلاعات بیشتر">ℹ️</button>
+                                <span class="test-icon" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.icon }}</span>
+                                <span class="test-name" onclick="selectTest('{{ test.id }}', '{{ test.name }}', '{{ test.icon }}')">{{ test.name }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="no-custom-tests">
+                        <div class="empty-state">
+                            <span class="empty-icon">📭</span>
+                            <p>هنوز آزمون شخصی‌ای ایجاد نشده است</p>
+                            <p class="hint">از بخش "آزمون‌ساز" می‌توانید آزمون‌های شخصی خود را بسازید</p>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -1154,21 +1272,60 @@
 
         // Switch between category and subsystem views
         function switchView(viewType) {
+            console.log('🔄 switchView called with:', viewType);
+            
             const categoryView = document.getElementById('categoryView');
             const subsystemView = document.getElementById('subsystemView');
+            const customView = document.getElementById('customView');
             const categoryBtn = document.getElementById('viewBtnCategory');
             const subsystemBtn = document.getElementById('viewBtnSubsystem');
+            const customBtn = document.getElementById('viewBtnCustom');
 
+            console.log('📦 customView element:', customView);
+            console.log('📦 customView innerHTML length:', customView ? customView.innerHTML.length : 'null');
+
+            // Remove active from all
+            categoryView.classList.remove('active');
+            subsystemView.classList.remove('active');
+            customView.classList.remove('active');
+            categoryBtn.classList.remove('active');
+            subsystemBtn.classList.remove('active');
+            customBtn.classList.remove('active');
+
+            // Add active to selected
             if (viewType === 'category') {
                 categoryView.classList.add('active');
-                subsystemView.classList.remove('active');
                 categoryBtn.classList.add('active');
-                subsystemBtn.classList.remove('active');
-            } else {
-                categoryView.classList.remove('active');
+            } else if (viewType === 'subsystem') {
                 subsystemView.classList.add('active');
-                categoryBtn.classList.remove('active');
                 subsystemBtn.classList.add('active');
+            } else if (viewType === 'custom') {
+                customView.classList.add('active');
+                customBtn.classList.add('active');
+                console.log('✅ customView is now active');
+                console.log('📋 Test items in customView:', customView.querySelectorAll('.test-item').length);
+            }
+        }
+
+        // Refresh custom tests
+        async function refreshCustomTests() {
+            const btn = event.target;
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/refresh-custom-tests');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // رفرش خودکار صفحه
+                    window.location.reload();
+                } else {
+                    alert('❌ خطا: ' + data.error);
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                alert('❌ خطا در بارگذاری مجدد: ' + error.message);
+                btn.disabled = false;
             }
         }
 

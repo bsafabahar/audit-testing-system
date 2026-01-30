@@ -271,7 +271,7 @@
                     <div class="form-group">
                         <label for="provider">ارائه‌دهنده هوش مصنوعی *</label>
                         <select id="provider" name="provider" required>
-                            <option value="openai">OpenAI (GPT-4, GPT-3.5)</option>
+                            <option value="avalai" selected>AvalAI (GPT-4o, GPT-4o-mini)</option>
                             <option value="anthropic">Anthropic (Claude)</option>
                         </select>
                     </div>
@@ -282,11 +282,25 @@
                             type="text" 
                             id="model" 
                             name="model" 
-                            placeholder="مثال: gpt-4, claude-3-sonnet-20240229"
+                            placeholder="مثال: gpt-4o-mini, claude-3-sonnet-20240229"
                         />
                         <div class="help-text">
                             در صورت خالی گذاشتن، مدل پیش‌فرض استفاده می‌شود
                         </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="base_url">آدرس پایه API (فقط برای AvalAI)</label>
+                    <input 
+                        type="text" 
+                        id="base_url" 
+                        name="base_url" 
+                        placeholder="https://api.avalai.ir/v1"
+                        value="https://api.avalai.ir/v1"
+                    />
+                    <div class="help-text">
+                        آدرس پایه API AvalAI (فقط در صورت استفاده از AvalAI نیاز است)
                     </div>
                 </div>
 
@@ -297,6 +311,7 @@
                         id="api_key" 
                         name="api_key" 
                         placeholder="کلید API خود را وارد کنید"
+                        value="aa-7QZl0Ab58B13JYYTG5WCeOSq8UIJh5IgwpqNa6hZLgACOACf"
                         required
                     />
                     <div class="help-text">
@@ -357,7 +372,8 @@
                 filename: document.getElementById('filename').value,
                 provider: document.getElementById('provider').value,
                 model: document.getElementById('model').value,
-                api_key: document.getElementById('api_key').value
+                api_key: document.getElementById('api_key').value,
+                base_url: document.getElementById('base_url').value
             };
 
             // Disable button and show loading
