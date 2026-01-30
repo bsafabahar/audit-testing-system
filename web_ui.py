@@ -31,6 +31,7 @@ from sqlalchemy.orm import sessionmaker
 from test_data_requirements import get_test_requirements, get_all_required_files
 from auth import init_auth, authenticate_user, create_user, create_password_reset_token, reset_password, send_password_reset_email, get_all_users, update_user
 from flask_login import login_user, logout_user, login_required, current_user
+from test_generator import generate_and_save_test
 
 # ایجاد session factory برای write operations
 def get_write_session():
@@ -826,6 +827,75 @@ def export_test(test_id):
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# روت‌های آزمون‌ساز (Test Generator)
+@app.route('/test-generator')
+@login_required
+def test_generator_page():
+    """صفحه آزمون‌ساز"""
+    return render_template('test_generator.html')
+
+
+@app.route('/generate-test', methods=['POST'])
+@login_required
+def generate_test():
+    """تولید آزمون جدید با هوش مصنوعی"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'message': 'داده‌های ورودی یافت نشد'
+            }), 400
+        
+        user_description = data.get('description', '').strip()
+        provider = data.get('provider', 'openai').lower()
+        api_key = data.get('api_key', '').strip()
+        model = data.get('model', '').strip() or None
+        filename = data.get('filename', '').strip() or None
+        
+        # اعتبارسنجی ورودی
+        if not user_description:
+            return jsonify({
+                'success': False,
+                'message': 'لطفاً توضیحات آزمون را وارد کنید'
+            }), 400
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'message': 'لطفاً کلید API را وارد کنید'
+            }), 400
+        
+        if provider not in ['openai', 'anthropic']:
+            return jsonify({
+                'success': False,
+                'message': 'ارائه‌دهنده نامعتبر است. فقط openai یا anthropic مجاز است'
+            }), 400
+        
+        # مسیر پوشه queries
+        queries_dir = os.path.join(os.path.dirname(__file__), 'queries')
+        
+        # تولید و ذخیره آزمون
+        result = generate_and_save_test(
+            user_description=user_description,
+            api_key=api_key,
+            provider=provider,
+            model=model,
+            filename=filename,
+            queries_dir=queries_dir
+        )
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'خطا در تولید آزمون: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
 
 
 # روت‌های احراز هویت
