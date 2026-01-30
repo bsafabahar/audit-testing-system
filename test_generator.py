@@ -502,9 +502,32 @@ def generate_test_with_avalai(user_description: str, api_key: str, model: str = 
         )
         
         print(f"[DEBUG] Response received")
+        print(f"[DEBUG] Response type: {type(response)}")
+        print(f"[DEBUG] Response has choices: {hasattr(response, 'choices')}")
         
         # استخراج کد تولید شده
+        if not response.choices:
+            print(f"[ERROR] No choices in response")
+            return None
+        
+        print(f"[DEBUG] Number of choices: {len(response.choices)}")
+        
+        if not response.choices[0].message:
+            print(f"[ERROR] No message in first choice")
+            return None
+            
+        if not response.choices[0].message.content:
+            print(f"[ERROR] Empty content in message")
+            print(f"[DEBUG] Message object: {response.choices[0].message}")
+            return None
+            
         generated_content = response.choices[0].message.content.strip()
+        print(f"[DEBUG] Content extracted successfully")
+        
+        if not generated_content:
+            print(f"[ERROR] Generated content is empty after strip")
+            return None
+            
         print(f"[DEBUG] Generated content length: {len(generated_content)}")
         
         # حذف markdown code blocks فقط از ابتدا و انتهای کد پایتون (قبل از ---MARKDOWN_FILE---)
@@ -586,7 +609,26 @@ def generate_test_with_anthropic(user_description: str, api_key: str, model: str
         )
         
         # استخراج کد تولید شده
+        print(f"[DEBUG] Message type: {type(message)}")
+        print(f"[DEBUG] Message has content: {hasattr(message, 'content')}")
+        
+        if not message.content:
+            print(f"[ERROR] Empty content from Claude API")
+            return None
+        
+        print(f"[DEBUG] Content length: {len(message.content)}")
+        
+        if not message.content[0].text:
+            print(f"[ERROR] Empty text in first content block")
+            print(f"[DEBUG] Content[0]: {message.content[0]}")
+            return None
+            
         generated_content = message.content[0].text.strip()
+        print(f"[DEBUG] Content extracted successfully")
+        
+        if not generated_content:
+            print(f"[ERROR] Generated content is empty after strip")
+            return None
         
         # حذف markdown code blocks فقط از ابتدا و انتهای کد پایتون (قبل از ---MARKDOWN_FILE---)
         if generated_content.startswith("```python"):
@@ -615,7 +657,9 @@ def generate_test_with_anthropic(user_description: str, api_key: str, model: str
         return generated_content
         
     except Exception as e:
-        print(f"خطا در تولید آزمون با Claude: {str(e)}")
+        print(f"[ERROR] خطا در تولید آزمون با Claude: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -837,9 +881,12 @@ def generate_and_save_test(
     
     if not generated_code:
         print(f"[ERROR] No code generated!")
+        print(f"[ERROR] Provider used: {provider}")
+        print(f"[ERROR] Model used: {model}")
+        print(f"[ERROR] Description length: {len(user_description)}")
         return {
             'success': False,
-            'message': 'خطا در تولید کد از AI',
+            'message': f'خطا در تولید کد از AI (Provider: {provider}, Model: {model})',
             'filename': None,
             'code': None
         }
