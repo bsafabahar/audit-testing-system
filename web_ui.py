@@ -967,7 +967,7 @@ def test_api_connection():
         result = generate_test_with_avalai(
             user_description="یک تست ساده برای شناسایی تراکنش‌های تکراری",
             api_key="aa-7QZl0Ab58B13JYYTG5WCeOSq8UIJh5IgwpqNa6hZLgACOACf",
-            model="gpt-4o-mini",
+            model="cf.qwen2.5-coder-32b-instruct",
             base_url="https://api.avalai.ir/v1",
             use_prompt=False
         )

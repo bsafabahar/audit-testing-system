@@ -519,6 +519,9 @@ def generate_test_with_avalai(user_description: str, api_key: str, model: str = 
         if not response.choices[0].message.content:
             print(f"[ERROR] Empty content in message")
             print(f"[DEBUG] Message object: {response.choices[0].message}")
+            print(f"[DEBUG] Finish reason: {response.choices[0].finish_reason}")
+            print(f"[ERROR] احتمالاً مدل '{model}' برای این نوع درخواست مناسب نیست")
+            print(f"[ERROR] یا پرامپت بیش از حد طولانی است (طول: {len(full_prompt) if use_prompt else 'N/A'})")
             return None
             
         generated_content = response.choices[0].message.content.strip()
@@ -621,6 +624,8 @@ def generate_test_with_anthropic(user_description: str, api_key: str, model: str
         if not message.content[0].text:
             print(f"[ERROR] Empty text in first content block")
             print(f"[DEBUG] Content[0]: {message.content[0]}")
+            print(f"[DEBUG] Stop reason: {message.stop_reason}")
+            print(f"[ERROR] احتمالاً مدل '{model}' برای این نوع درخواست مناسب نیست")
             return None
             
         generated_content = message.content[0].text.strip()
@@ -884,9 +889,22 @@ def generate_and_save_test(
         print(f"[ERROR] Provider used: {provider}")
         print(f"[ERROR] Model used: {model}")
         print(f"[ERROR] Description length: {len(user_description)}")
+        print(f"[ERROR] Use prompt: {use_prompt}")
+        
+        # پیشنهادات رفع مشکل
+        suggestions = []
+        if 'nano' in model.lower():
+            suggestions.append('مدل Nano برای پرامپت‌های پیچیده مناسب نیست. از gpt-4o-mini یا claude استفاده کنید')
+        if use_prompt:
+            suggestions.append('می‌توانید use_prompt=False را امتحان کنید (پرامپت ساده‌تر)')
+        
+        error_message = f'خطا در تولید کد از AI (Provider: {provider}, Model: {model})'
+        if suggestions:
+            error_message += '\n\n💡 پیشنهادات:\n' + '\n'.join(f'  • {s}' for s in suggestions)
+        
         return {
             'success': False,
-            'message': f'خطا در تولید کد از AI (Provider: {provider}, Model: {model})',
+            'message': error_message,
             'filename': None,
             'code': None
         }

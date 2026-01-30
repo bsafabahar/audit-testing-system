@@ -217,6 +217,122 @@
             margin: 5px 0;
             color: #555;
         }
+
+        .model-selector {
+            margin-bottom: 25px;
+        }
+
+        .model-selector-label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .model-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .model-option {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .model-option:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .model-option input[type="radio"] {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .model-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .model-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .model-description {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .model-name {
+            color: #667eea;
+            font-size: 0.85em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .ai-settings-panel {
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .ai-panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .ai-panel-header:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #653b8b 100%);
+        }
+
+        .ai-panel-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        .ai-panel-toggle {
+            font-size: 1.5em;
+            transition: transform 0.3s;
+        }
+
+        .ai-panel-toggle.open {
+            transform: rotate(180deg);
+        }
+
+        .ai-panel-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .ai-panel-content.open {
+            max-height: 1000px;
+        }
+
+        .ai-panel-inner {
+            padding: 25px;
+        }
     </style>
 </head>
 <body>
@@ -267,55 +383,88 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="provider">ارائه‌دهنده هوش مصنوعی *</label>
-                        <select id="provider" name="provider" required>
-                            <option value="avalai" selected>AvalAI (GPT-4o, GPT-4o-mini)</option>
-                            <option value="anthropic">Anthropic (Claude)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="model">مدل (اختیاری)</label>
-                        <input 
-                            type="text" 
-                            id="model" 
-                            name="model" 
-                            placeholder="مثال: gpt-4o-mini, claude-3-sonnet-20240229"
-                        />
-                        <div class="help-text">
-                            در صورت خالی گذاشتن، مدل پیش‌فرض استفاده می‌شود
+                <div class="model-selector">
+                    <label class="model-selector-label">🤖 انتخاب نوع هوش مصنوعی</label>
+                    <div class="model-options">
+                        <div class="model-option" id="simpleOption" data-type="simple">
+                            <input type="radio" name="model-type" id="simpleRadio" value="simple">
+                            <div class="model-title">💡 هوش مصنوعی ساده</div>
+                            <div class="model-description">مناسب برای آزمون‌های ساده و سریع</div>
+                            <div class="model-name">cf.qwen2.5-coder-32b-instruct</div>
+                        </div>
+                        
+                        <div class="model-option selected" id="advancedOption" data-type="advanced">
+                            <input type="radio" name="model-type" id="advancedRadio" value="advanced" checked>
+                            <div class="model-title">🚀 هوش مصنوعی پیشرفته</div>
+                            <div class="model-description">مناسب برای آزمون‌های پیچیده و تخصصی</div>
+                            <div class="model-name">claude-sonnet-4-5</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="base_url">آدرس پایه API (فقط برای AvalAI)</label>
-                    <input 
-                        type="text" 
-                        id="base_url" 
-                        name="base_url" 
-                        placeholder="https://api.avalai.ir/v1"
-                        value="https://api.avalai.ir/v1"
-                    />
-                    <div class="help-text">
-                        آدرس پایه API AvalAI (فقط در صورت استفاده از AvalAI نیاز است)
+                <div class="ai-settings-panel">
+                    <div class="ai-panel-header" id="aiPanelHeader">
+                        <h3>⚙️ تنظیمات ارائه‌دهنده هوش مصنوعی</h3>
+                        <span class="ai-panel-toggle" id="aiPanelToggle">▼</span>
                     </div>
-                </div>
+                    <div class="ai-panel-content" id="aiPanelContent">
+                        <div class="ai-panel-inner">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="provider">ارائه‌دهنده هوش مصنوعی *</label>
+                                    <select id="provider" name="provider" required>
+                                        <option value="avalai" selected>AvalAI (GPT-4o, GPT-4o-mini)</option>
+                                        <option value="anthropic">Anthropic (Claude)</option>
+                                    </select>
+                                </div>
 
-                <div class="form-group">
-                    <label for="api_key">کلید API *</label>
-                    <input 
-                        type="password" 
-                        id="api_key" 
-                        name="api_key" 
-                        placeholder="کلید API خود را وارد کنید"
-                        value="aa-7QZl0Ab58B13JYYTG5WCeOSq8UIJh5IgwpqNa6hZLgACOACf"
-                        required
-                    />
-                    <div class="help-text">
-                        کلید API شما به صورت امن ارسال می‌شود و ذخیره نمی‌گردد
+                                <div class="form-group">
+                                    <label for="model">مدل (اختیاری)</label>
+                                    <input 
+                                        type="text" 
+                                        id="model" 
+                                        name="model" 
+                                        placeholder="مثال: gpt-4o-mini, claude-3-sonnet-20240229"
+                                        value="claude-sonnet-4-5"
+                                    />
+                                    <div class="help-text">
+                                        در صورت خالی گذاشتن، مدل پیش‌فرض استفاده می‌شود
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="base_url">آدرس پایه API *</label>
+                                <input 
+                                    type="text" 
+                                    id="base_url" 
+                                    name="base_url" 
+                                    placeholder="https://api.avalai.ir/v1"
+                                    value="https://api.avalai.ir/v1"
+                                    autocomplete="off"
+                                    required
+                                />
+                                <div class="help-text">
+                                    آدرس پایه API AvalAI
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="api_key">کلید API *</label>
+                                <input 
+                                    type="password" 
+                                    id="api_key" 
+                                    name="api_key" 
+                                    placeholder="کلید API خود را وارد کنید"
+                                    value="aa-7QZl0Ab58B13JYYTG5WCeOSq8UIJh5IgwpqNa6hZLgACOACf"
+                                    autocomplete="new-password"
+                                    required
+                                />
+                                <div class="help-text">
+                                    کلید API شما به صورت امن ارسال می‌شود و ذخیره نمی‌گردد
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -343,6 +492,52 @@
         const alertBox = document.getElementById('alertBox');
         const codePreview = document.getElementById('codePreview');
         const generatedCode = document.getElementById('generatedCode');
+
+        // AI Panel Toggle
+        const aiPanelHeader = document.getElementById('aiPanelHeader');
+        const aiPanelContent = document.getElementById('aiPanelContent');
+        const aiPanelToggle = document.getElementById('aiPanelToggle');
+
+        aiPanelHeader.addEventListener('click', () => {
+            aiPanelContent.classList.toggle('open');
+            aiPanelToggle.classList.toggle('open');
+        });
+
+        // Model Selection
+        const simpleOption = document.getElementById('simpleOption');
+        const advancedOption = document.getElementById('advancedOption');
+        const simpleRadio = document.getElementById('simpleRadio');
+        const advancedRadio = document.getElementById('advancedRadio');
+        const providerSelect = document.getElementById('provider');
+        const modelInput = document.getElementById('model');
+        const baseUrlInput = document.getElementById('base_url');
+
+        function updateModelSelection(type) {
+            if (type === 'simple') {
+                simpleOption.classList.add('selected');
+                advancedOption.classList.remove('selected');
+                simpleRadio.checked = true;
+                
+                // Update form fields for simple model
+                providerSelect.value = 'avalai';
+                modelInput.value = 'cf.qwen2.5-coder-32b-instruct';
+                baseUrlInput.value = 'https://api.avalai.ir/v1';
+            } else {
+                advancedOption.classList.add('selected');
+                simpleOption.classList.remove('selected');
+                advancedRadio.checked = true;
+                
+                // Update form fields for advanced model
+                providerSelect.value = 'avalai';
+                modelInput.value = 'claude-sonnet-4-5';
+                baseUrlInput.value = 'https://api.avalai.ir/v1';
+            }
+        }
+
+        simpleOption.addEventListener('click', () => updateModelSelection('simple'));
+        advancedOption.addEventListener('click', () => updateModelSelection('advanced'));
+        simpleRadio.addEventListener('change', () => updateModelSelection('simple'));
+        advancedRadio.addEventListener('change', () => updateModelSelection('advanced'));
 
         function showAlert(message, type) {
             alertBox.textContent = message;
