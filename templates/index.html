@@ -580,6 +580,31 @@
             box-shadow: 0 3px 10px rgba(23, 162, 184, 0.3);
         }
 
+        .btn-fix-error {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 25px;
+            font-size: 0.95em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-fix-error:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+            background: linear-gradient(135deg, #ff5252 0%, #e63946 100%);
+        }
+
+        .btn-fix-error:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Loading & Progress */
         .loading {
             text-align: center;
@@ -1741,6 +1766,26 @@
             `;
         }
 
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Escape for use in onclick attribute
+        function escapeForAttribute(text) {
+            if (!text) return '';
+            return text
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/`/g, '\\`');
+        }
+
         function collectTestParameters(testId) {
             const params = {};
             const testParams = testParametersData.get(testId);
@@ -1858,7 +1903,26 @@
                 `;
 
                 if (result.error) {
-                    html += `<p style="color: #dc3545; font-weight: bold;">خطا: ${result.error}</p>`;
+                    const displayError = escapeHtml(result.error);
+                    const safeTestId = escapeHtml(result.test_id);
+                    
+                    // Store error data in a global map for safe access
+                    if (!window.testErrorData) {
+                        window.testErrorData = new Map();
+                    }
+                    window.testErrorData.set(result.test_id, {
+                        error: result.error,
+                        traceback: result.traceback || ''
+                    });
+                    
+                    html += `
+                        <div style="margin: 15px 0;">
+                            <p style="color: #dc3545; font-weight: bold; margin-bottom: 10px;">خطا: ${displayError}</p>
+                            <button class="btn-fix-error" data-test-id="${safeTestId}">
+                                🔧 اصلاح خودکار با هوش مصنوعی
+                            </button>
+                        </div>
+                    `;
                 } else {
                     // Stats
                     html += `<div class="result-stats">`;
@@ -1934,6 +1998,17 @@
             }
 
             container.innerHTML = html;
+            
+            // Add event listeners to fix-error buttons
+            document.querySelectorAll('.btn-fix-error').forEach(button => {
+                button.addEventListener('click', function() {
+                    const testId = this.getAttribute('data-test-id');
+                    if (testId && window.testErrorData && window.testErrorData.has(testId)) {
+                        const errorData = window.testErrorData.get(testId);
+                        fixTestError(testId, errorData.error, errorData.traceback);
+                    }
+                });
+            });
         }
 
         // Generate interpretation based on results
@@ -2015,6 +2090,95 @@
                 document.body.removeChild(a);
             } catch (error) {
                 alert('خطا در دانلود فایل: ' + error.message);
+            }
+        }
+
+        // Fix test error using AI
+        async function fixTestError(testId, errorMessage, traceback) {
+            console.log('🔧 fixTestError called with:', { testId, errorMessage, traceback });
+            
+            if (!confirm('آیا می‌خواهید از هوش مصنوعی برای اصلاح این خطا استفاده کنید؟\n\nتوجه: این عملیات کد آزمون را تغییر خواهد داد و یک نسخه پشتیبان ایجاد می‌شود.')) {
+                console.log('❌ User cancelled fix operation');
+                return;
+            }
+
+            // Find the button and disable it
+            const buttons = document.querySelectorAll('.btn-fix-error');
+            console.log(`🔘 Found ${buttons.length} fix buttons`);
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.textContent = '⏳ در حال اصلاح...';
+            });
+
+            try {
+                console.log('📤 Sending fix request to server...');
+                const response = await fetch('/fix-test-error', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test_id: testId,
+                        error_message: errorMessage,
+                        traceback: traceback
+                    })
+                });
+                
+                console.log('📥 Response status:', response.status);
+
+                const result = await response.json();
+                console.log('📊 Result:', result);
+
+                if (result.success) {
+                    console.log('✅ Fix successful!');
+                    alert(`✅ ${result.message}\n\nفایل پشتیبان: ${result.backup_file}\n\nلطفاً دوباره آزمون را اجرا کنید.`);
+                    
+                    // Re-run the test automatically
+                    if (confirm('آیا می‌خواهید آزمون اصلاح شده را فوراً اجرا کنید؟')) {
+                        console.log('🔄 Re-running test...');
+                        // Clear previous results for this test
+                        testResults = testResults.filter(r => r.test_id !== testId);
+                        
+                        // Run the fixed test
+                        const test = selectedTests.get(testId);
+                        if (test) {
+                            try {
+                                const params = collectTestParameters(testId);
+                                const testResponse = await fetch(`/run-test/${testId}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(params)
+                                });
+
+                                const testResult = await testResponse.json();
+                                testResult.test_name = test.name;
+                                testResult.test_icon = test.icon;
+                                testResult.test_id = testId;
+                                testResults.push(testResult);
+
+                                // Re-display results
+                                displayResults();
+                                console.log('✅ Test re-run complete');
+                            } catch (error) {
+                                console.error('❌ Error re-running test:', error);
+                                alert('خطا در اجرای مجدد آزمون: ' + error.message);
+                            }
+                        }
+                    }
+                } else {
+                    console.error('❌ Fix failed:', result.error);
+                    alert(`❌ خطا در اصلاح: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('❌ Error in fixTestError:', error);
+                alert('خطا در ارتباط با سرور: ' + error.message);
+            } finally {
+                console.log('🔄 Re-enabling buttons...');
+                // Re-enable buttons
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.textContent = '🔧 اصلاح خودکار با هوش مصنوعی';
+                });
             }
         }
 

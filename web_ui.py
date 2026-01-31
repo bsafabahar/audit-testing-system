@@ -1297,6 +1297,143 @@ def change_password():
     return render_template('change_password.html')
 
 
+@app.route('/fix-test-error', methods=['POST'])
+@login_required
+def fix_test_error():
+    """اصلاح خطای آزمون با استفاده از هوش مصنوعی"""
+    try:
+        data = request.get_json()
+        test_id = data.get('test_id')
+        error_message = data.get('error_message')
+        traceback_message = data.get('traceback', '')
+        
+        if not test_id or not error_message:
+            return jsonify({
+                'success': False,
+                'error': 'اطلاعات ناقص است'
+            }), 400
+        
+        # خواندن کد فعلی آزمون
+        if test_id.startswith('custom_tests_'):
+            actual_test_name = test_id.replace('custom_tests_', '')
+            module_path = f'queries.custom_tests.{actual_test_name}'
+            file_path = project_root / 'queries' / 'custom_tests' / f'{actual_test_name}.py'
+        else:
+            module_path = f'queries.{test_id}'
+            file_path = project_root / 'queries' / f'{test_id}.py'
+        
+        if not file_path.exists():
+            return jsonify({
+                'success': False,
+                'error': 'فایل آزمون یافت نشد'
+            }), 404
+        
+        # خواندن کد فعلی
+        with open(file_path, 'r', encoding='utf-8') as f:
+            current_code = f.read()
+        
+        # ساخت پرامپت برای هوش مصنوعی
+        prompt = f"""شما یک متخصص برنامه‌نویسی پایتون و حسابرسی هستید. یک آزمون حسابرسی با خطا مواجه شده است.
+
+کد فعلی آزمون:
+```python
+{current_code}
+```
+
+خطای رخ داده:
+{error_message}
+
+جزئیات خطا (traceback):
+{traceback_message}
+
+لطفاً کد را به گونه‌ای اصلاح کنید که این خطا برطرف شود. نکات مهم:
+1. فقط کد پایتون اصلاح شده را بازگردانید (بدون توضیحات اضافی)
+2. ساختار کلی کد را حفظ کنید
+3. تمام توابع مورد نیاز (define و execute) را در خروجی قرار دهید
+4. کد باید با UTF-8 encoding کار کند
+5. از Decimal برای مقادیر عددی استفاده کنید
+6. اگر خطا مربوط به index است، مطمئن شوید که indexes را به int تبدیل می‌کنید
+7. کد باید کامل و قابل اجرا باشد
+
+فقط کد اصلاح شده را بدون هیچ توضیح اضافی بازگردانید:"""
+
+        # فراخوانی API هوش مصنوعی
+        from openai import OpenAI
+        
+        api_key = os.getenv('AVALAI_API_KEY', '')
+        base_url = os.getenv('AVALAI_BASE_URL', 'https://api.avalai.ir/v1')
+        model = os.getenv('AVALAI_MODEL', 'gpt-4o-mini')
+        
+        if not api_key:
+            return jsonify({
+                'success': False,
+                'error': 'کلید API هوش مصنوعی تنظیم نشده است'
+            }), 500
+        
+        client = OpenAI(
+            api_key=api_key,
+            base_url=base_url
+        )
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "شما یک متخصص برنامه‌نویسی پایتون هستید که کدهای با کیفیت بالا تولید می‌کنید."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.2,
+            max_tokens=4000
+        )
+        
+        if not response.choices or not response.choices[0].message.content:
+            return jsonify({
+                'success': False,
+                'error': 'هوش مصنوعی پاسخی ارسال نکرد'
+            }), 500
+        
+        fixed_code = response.choices[0].message.content.strip()
+        
+        # حذف markdown code blocks
+        if fixed_code.startswith("```python"):
+            lines = fixed_code.split('\n')
+            if len(lines) > 1:
+                fixed_code = '\n'.join(lines[1:])
+        elif fixed_code.startswith("```"):
+            lines = fixed_code.split('\n')
+            if len(lines) > 1:
+                fixed_code = '\n'.join(lines[1:])
+        
+        if fixed_code.endswith("```"):
+            fixed_code = fixed_code[:-3].strip()
+        
+        # ذخیره کد اصلاح شده
+        # ابتدا یک نسخه پشتیبان ایجاد کنیم
+        backup_path = file_path.parent / f'{file_path.stem}_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.py'
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            f.write(current_code)
+        
+        # ذخیره کد جدید
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(fixed_code)
+        
+        # Reload the module
+        if module_path in sys.modules:
+            importlib.reload(sys.modules[module_path])
+        
+        return jsonify({
+            'success': True,
+            'message': 'کد با موفقیت اصلاح شد. لطفاً دوباره آزمون را اجرا کنید.',
+            'backup_file': backup_path.name
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'خطا در اصلاح کد: {str(e)}',
+            'traceback': traceback.format_exc()
+        }), 500
+
+
 if __name__ == '__main__':
     # ایجاد جداول دیتابیس
     if not db._initialized:

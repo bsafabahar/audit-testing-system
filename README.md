@@ -316,7 +316,44 @@ The system now includes an intelligent test generator that automatically creates
 
 For detailed instructions, see **[Test Generator Guide](./TEST_GENERATOR_GUIDE.md)**
 
-## 📚 Additional Resources
+## � AI-Powered Auto-Fix Feature
+
+**NEW!** When a test encounters an error, you can now automatically fix it using AI with a single click!
+
+### Features:
+- 🤖 Automatic error detection and fixing
+- 🔒 Safe with automatic backup creation
+- ⚡ Fast - fixes in 10-30 seconds
+- 🌐 Persian language support
+- 💡 Handles common errors (TypeError, KeyError, IndexError, etc.)
+
+### How It Works:
+1. Run a test that encounters an error
+2. Click the **"🔧 اصلاح خودکار با هوش مصنوعی"** button
+3. AI analyzes the code and error
+4. Fixed code is automatically applied
+5. Optionally re-run the test immediately
+
+### Setup:
+```env
+# Add to your .env file
+AVALAI_API_KEY=your_avalai_api_key_here
+AVALAI_BASE_URL=https://api.avalai.ir/v1
+AVALAI_MODEL=gpt-4o-mini
+```
+
+### Documentation:
+- **[User Guide (Persian)](./AUTO_FIX_GUIDE.md)** - راهنمای کامل فارسی
+- **[Technical Documentation](./AUTO_FIX_TECHNICAL.md)** - For developers
+- **[Feature Summary](./AUTO_FIX_SUMMARY.md)** - خلاصه تغییرات
+
+### Example:
+```
+Error: list indices must be integers or slices, not decimal.Decimal
+[🔧 Click to Auto-Fix] → AI fixes → Test runs successfully! ✅
+```
+
+## �📚 Additional Resources
 
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
 - [PyODBC Documentation](https://github.com/mkleehammer/pyodbc/wiki)
