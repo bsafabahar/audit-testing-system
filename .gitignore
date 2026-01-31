@@ -69,6 +69,10 @@ desktop.ini
 *.pyo
 *.pyd
 
+# Backup files
+*_backup_*.bak
+*.bak
+
 # Output files
 output/
 results/

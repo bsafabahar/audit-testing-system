@@ -1408,7 +1408,7 @@ def fix_test_error():
         
         # ذخیره کد اصلاح شده
         # ابتدا یک نسخه پشتیبان ایجاد کنیم
-        backup_path = file_path.parent / f'{file_path.stem}_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.py'
+        backup_path = file_path.parent / f'{file_path.stem}_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.bak'
         with open(backup_path, 'w', encoding='utf-8') as f:
             f.write(current_code)
         

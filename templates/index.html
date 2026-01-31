@@ -1072,6 +1072,103 @@
             font-size: 1.2em;
             margin: 0;
         }
+
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .pagination-info {
+            margin: 0 15px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .pagination-btn {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .pagination-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+        .pagination-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .page-number {
+            min-width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            padding: 0 12px;
+            border-radius: 8px;
+            background: white;
+            border: 2px solid #dee2e6;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .page-number:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .page-number.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 20px;
+        }
+
+        .page-size-select {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            padding: 6px 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .page-size-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -1280,6 +1377,9 @@
         let selectedTests = new Map();
         let uploadedFiles = new Map();
         let testResults = [];
+        
+        // Pagination state
+        let paginationState = new Map(); // Map of testId -> { currentPage, pageSize, totalPages }
 
         // Toggle category expansion
         function toggleCategory(categoryId) {
@@ -1884,6 +1984,123 @@
             btnRun.disabled = false;
         }
 
+        // Pagination helper functions
+        function initializePagination(testId, totalResults) {
+            if (!paginationState.has(testId)) {
+                const pageSize = 10;
+                paginationState.set(testId, {
+                    currentPage: 1,
+                    pageSize: pageSize,
+                    totalPages: Math.ceil(totalResults / pageSize)
+                });
+            }
+        }
+
+        function changePage(testId, newPage) {
+            const state = paginationState.get(testId);
+            if (!state) return;
+            
+            state.currentPage = Math.max(1, Math.min(newPage, state.totalPages));
+            paginationState.set(testId, state);
+            displayResults();
+        }
+
+        function changePageSize(testId, newSize) {
+            const result = testResults.find(r => r.test_id === testId);
+            if (!result || !result.results) return;
+            
+            const state = paginationState.get(testId) || { currentPage: 1 };
+            state.pageSize = parseInt(newSize);
+            state.totalPages = Math.ceil(result.results.length / state.pageSize);
+            state.currentPage = Math.min(state.currentPage, state.totalPages);
+            paginationState.set(testId, state);
+            displayResults();
+        }
+
+        function renderPaginationControls(testId, totalResults) {
+            if (totalResults <= 10) return ''; // No pagination needed
+            
+            const state = paginationState.get(testId);
+            if (!state) return '';
+            
+            const { currentPage, pageSize, totalPages } = state;
+            const startRecord = (currentPage - 1) * pageSize + 1;
+            const endRecord = Math.min(currentPage * pageSize, totalResults);
+            
+            let html = '<div class="pagination-container">';
+            
+            // Page size selector
+            html += `
+                <div class="page-size-selector">
+                    <span>تعداد در صفحه:</span>
+                    <select class="page-size-select" onchange="changePageSize('${testId}', this.value)">
+                        <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
+                        <option value="25" ${pageSize === 25 ? 'selected' : ''}>25</option>
+                        <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                        <option value="100" ${pageSize === 100 ? 'selected' : ''}>100</option>
+                    </select>
+                </div>
+            `;
+            
+            // Previous button
+            html += `
+                <button class="pagination-btn" onclick="changePage('${testId}', ${currentPage - 1})" 
+                    ${currentPage === 1 ? 'disabled' : ''}>
+                    ← قبلی
+                </button>
+            `;
+            
+            // Page numbers (show max 5 pages)
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+            
+            // Adjust startPage if we're near the end
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+            
+            // First page
+            if (startPage > 1) {
+                html += `<span class="page-number" onclick="changePage('${testId}', 1)">1</span>`;
+                if (startPage > 2) {
+                    html += `<span class="pagination-info">...</span>`;
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                html += `<span class="page-number ${activeClass}" onclick="changePage('${testId}', ${i})">${i}</span>`;
+            }
+            
+            // Last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<span class="pagination-info">...</span>`;
+                }
+                html += `<span class="page-number" onclick="changePage('${testId}', ${totalPages})">${totalPages}</span>`;
+            }
+            
+            // Next button
+            html += `
+                <button class="pagination-btn" onclick="changePage('${testId}', ${currentPage + 1})" 
+                    ${currentPage === totalPages ? 'disabled' : ''}>
+                    بعدی →
+                </button>
+            `;
+            
+            // Info
+            html += `
+                <span class="pagination-info">
+                    نمایش ${startRecord.toLocaleString('fa-IR')} تا ${endRecord.toLocaleString('fa-IR')} از ${totalResults.toLocaleString('fa-IR')}
+                </span>
+            `;
+            
+            html += '</div>';
+            return html;
+        }
+
         // Display results with interpretation
         function displayResults() {
             const container = document.getElementById('resultsContainer');
@@ -1957,8 +2174,22 @@
 
                     // Results table
                     if (result.results && result.results.length > 0) {
+                        // Initialize pagination for this test
+                        initializePagination(result.test_id, result.results.length);
+                        const state = paginationState.get(result.test_id);
+                        const { currentPage, pageSize } = state;
+                        
+                        // Calculate pagination
+                        const startIndex = (currentPage - 1) * pageSize;
+                        const endIndex = Math.min(startIndex + pageSize, result.results.length);
+                        const paginatedResults = result.results.slice(startIndex, endIndex);
+                        
                         html += `<div class="result-table">`;
-                        html += `<h4 style="margin: 15px 0; color: #667eea;">📋 جزئیات (نمایش ${Math.min(10, result.results.length)} از ${result.count} رکورد):</h4>`;
+                        html += `<h4 style="margin: 15px 0; color: #667eea;">📋 جزئیات:</h4>`;
+                        
+                        // Pagination controls (top)
+                        html += renderPaginationControls(result.test_id, result.results.length);
+                        
                         html += `<table><thead><tr>`;
                         
                         const keys = Object.keys(result.results[0]);
@@ -1967,7 +2198,7 @@
                         });
                         html += `</tr></thead><tbody>`;
 
-                        result.results.slice(0, 10).forEach(row => {
+                        paginatedResults.forEach(row => {
                             html += `<tr>`;
                             keys.forEach(key => {
                                 let value = row[key];
@@ -1979,7 +2210,12 @@
                             html += `</tr>`;
                         });
 
-                        html += `</tbody></table></div>`;
+                        html += `</tbody></table>`;
+                        
+                        // Pagination controls (bottom)
+                        html += renderPaginationControls(result.test_id, result.results.length);
+                        
+                        html += `</div>`;
                     }
 
                     // Export button
