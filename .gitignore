@@ -90,3 +90,4 @@ playwright-report/
 
 # Custom tests
 queries/custom_tests/
+last_generated_test.py

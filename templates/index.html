@@ -2187,9 +2187,6 @@
                         html += `<div class="result-table">`;
                         html += `<h4 style="margin: 15px 0; color: #667eea;">📋 جزئیات:</h4>`;
                         
-                        // Pagination controls (top)
-                        html += renderPaginationControls(result.test_id, result.results.length);
-                        
                         html += `<table><thead><tr>`;
                         
                         const keys = Object.keys(result.results[0]);
@@ -2212,7 +2209,7 @@
 
                         html += `</tbody></table>`;
                         
-                        // Pagination controls (bottom)
+                        // Pagination controls (bottom only)
                         html += renderPaginationControls(result.test_id, result.results.length);
                         
                         html += `</div>`;
