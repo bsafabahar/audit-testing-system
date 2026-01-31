@@ -1538,13 +1538,13 @@
             if (selectedTests.has(testId)) {
                 selectedTests.clear();
                 // Remove selected class from all items
-                document.querySelectorAll('.tree-item').forEach(item => {
+                document.querySelectorAll('.test-item').forEach(item => {
                     item.classList.remove('selected');
                 });
             } else {
                 // حذف انتخاب آزمون قبلی
                 selectedTests.clear();
-                document.querySelectorAll('.tree-item').forEach(item => {
+                document.querySelectorAll('.test-item').forEach(item => {
                     item.classList.remove('selected');
                 });
                 
